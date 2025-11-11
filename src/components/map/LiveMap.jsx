@@ -14,6 +14,9 @@ import 'leaflet/dist/leaflet.css';
  * - Rate-limited updates (max 1 per 5s unless >100m delta)
  */
 
+// WebSocket relay endpoint
+const WS_RELAY_URL = 'wss://ws.entirecafm.io';
+
 // Custom marker icons
 const createEngineerIcon = (initials, status) => {
   return L.divIcon({
@@ -122,6 +125,7 @@ export default function LiveMap({ orgId, compact = false, onEngineerClick, onJob
   const [wsConnected, setWsConnected] = useState(false);
   const ws = useRef(null);
   const engineerPositions = useRef(new Map());
+  const reconnectAttempts = useRef(0);
 
   // Calculate distance between coordinates (meters)
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
@@ -147,22 +151,36 @@ export default function LiveMap({ orgId, compact = false, onEngineerClick, onJob
       try {
         const user = await base44.auth.me();
         
-        // Get token from Base44 auth (adjust based on implementation)
-        const token = localStorage.getItem('base44_token') || user.token || 'dev-token';
+        // Get JWT token from localStorage or Base44 session
+        let token = localStorage.getItem('base44_token');
         
-        // WebSocket relay URL (will be configured)
-        const wsUrl = `wss://ws.entirecafm.io?token=${token}&orgId=${orgId}`;
+        // If not in localStorage, try to get from session
+        if (!token) {
+          // For Base44 apps, the token might be in a different location
+          // This is a fallback - adjust based on your auth implementation
+          token = 'temp-token-for-testing';
+        }
         
+        const wsUrl = `${WS_RELAY_URL}?token=${token}&orgId=${orgId}`;
+        
+        console.log(`🔌 Connecting to WebSocket: ${wsUrl}`);
         ws.current = new WebSocket(wsUrl);
 
         ws.current.onopen = () => {
           console.log('✅ WebSocket connected');
           setWsConnected(true);
+          reconnectAttempts.current = 0;
         };
 
         ws.current.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
+            
+            if (data.type === 'connected') {
+              console.log('✅ WebSocket relay confirmed:', data);
+              return;
+            }
+            
             handleRealtimeUpdate(data);
           } catch (err) {
             console.error('WebSocket message error:', err);
@@ -175,27 +193,42 @@ export default function LiveMap({ orgId, compact = false, onEngineerClick, onJob
         };
 
         ws.current.onclose = () => {
-          console.log('WebSocket disconnected, reconnecting in 5s...');
+          console.log('WebSocket disconnected');
           setWsConnected(false);
-          setTimeout(connectWebSocket, 5000);
+          
+          // Exponential backoff reconnection
+          reconnectAttempts.current++;
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
+          console.log(`Reconnecting in ${delay}ms...`);
+          setTimeout(connectWebSocket, delay);
         };
 
       } catch (error) {
         console.error('WebSocket connection failed:', error);
         setWsConnected(false);
+        
+        // Retry after delay
+        setTimeout(connectWebSocket, 5000);
       }
     };
 
     connectWebSocket();
 
     return () => {
-      ws.current?.close();
+      if (ws.current) {
+        ws.current.close();
+      }
     };
   }, [orgId]);
 
   // Polling fallback (30s)
   useEffect(() => {
-    if (wsConnected) return;
+    if (wsConnected) {
+      console.log('✅ Using WebSocket real-time updates');
+      return;
+    }
+
+    console.log('⏱️ WebSocket unavailable, using 30s polling fallback');
 
     const fetchMapState = async () => {
       try {
@@ -221,6 +254,8 @@ export default function LiveMap({ orgId, compact = false, onEngineerClick, onJob
 
   // Handle real-time updates
   const handleRealtimeUpdate = (data) => {
+    console.log('📨 Real-time update:', data);
+
     if (data.type === 'engineer_location_update' && data.engineer) {
       setEngineers(prev => {
         const existing = prev.find(e => e.engineer_id === data.engineer.id);
@@ -236,9 +271,11 @@ export default function LiveMap({ orgId, compact = false, onEngineerClick, onJob
           
           // Rate limit: skip if <5s and delta <100m
           if (now - lastUpdate < 5000 && delta < 100) {
+            console.log(`⏭️ Skipping update for engineer ${data.engineer.id} (rate limited)`);
             return prev;
           }
 
+          console.log(`🎯 Updating engineer ${data.engineer.id} position (delta: ${delta.toFixed(0)}m)`);
           engineerPositions.current.set(data.engineer.id, now);
 
           return prev.map(e => 
@@ -247,6 +284,7 @@ export default function LiveMap({ orgId, compact = false, onEngineerClick, onJob
               : e
           );
         } else {
+          console.log(`✨ New engineer ${data.engineer.id} appeared`);
           engineerPositions.current.set(data.engineer.id, Date.now());
           return [...prev, { ...data.engineer, engineer_id: data.engineer.id }];
         }
@@ -254,6 +292,7 @@ export default function LiveMap({ orgId, compact = false, onEngineerClick, onJob
     }
 
     if (data.type === 'job_status_update' && data.job) {
+      console.log(`📋 Job ${data.job.id} status: ${data.job.status}`);
       setJobs(prev => {
         const existing = prev.find(j => j.id === data.job.id);
         if (existing) {

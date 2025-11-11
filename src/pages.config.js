@@ -25,6 +25,7 @@ import ClientQuotes from './pages/ClientQuotes';
 import ClientInvoices from './pages/ClientInvoices';
 import ClientRequestJob from './pages/ClientRequestJob';
 import Clients from './pages/Clients';
+import TestRedis from './pages/TestRedis';
 import Layout from './Layout.jsx';
 
 
@@ -56,6 +57,7 @@ export const PAGES = {
     "ClientInvoices": ClientInvoices,
     "ClientRequestJob": ClientRequestJob,
     "Clients": Clients,
+    "TestRedis": TestRedis,
 }
 
 export const pagesConfig = {
