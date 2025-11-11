@@ -13,7 +13,9 @@ import {
   ArrowRight,
   Calendar,
   MapPin,
-  User
+  User,
+  Brain,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +38,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
+import AITriagePanel from "../components/requests/AITriagePanel";
 
 export default function RequestsPage() {
   const navigate = useNavigate();
@@ -45,6 +48,7 @@ export default function RequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showConvertDialog, setShowConvertDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
   const { data: requests = [], isLoading } = useQuery({
@@ -65,6 +69,12 @@ export default function RequestsPage() {
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
+  });
+
+  // Fetch AI triage tasks
+  const { data: triageTasks = [] } = useQuery({
+    queryKey: ['ai-triage-tasks'],
+    queryFn: () => base44.entities.AITriageTask.list('-created_date'),
   });
 
   const convertToJobMutation = useMutation({
@@ -148,6 +158,28 @@ export default function RequestsPage() {
     critical: 'bg-red-500/20 text-red-200',
   };
 
+  // Get AI status for a request
+  const getAIStatus = (requestId) => {
+    const task = triageTasks.find(t => t.request_id === requestId);
+    if (!task) return null;
+    
+    const confidence = task.confidence || 0;
+    
+    if (task.status === 'AUTO_CREATED') {
+      return { icon: '✅', label: 'Auto-created', color: 'text-green-400' };
+    }
+    if (task.status === 'AWAITING_CONFIRMATION') {
+      return { icon: '⚠️', label: 'Confirm Required', color: 'text-yellow-400' };
+    }
+    if (task.status === 'REVIEW_REQUIRED') {
+      return { icon: '🧠', label: 'Review Needed', color: 'text-red-400' };
+    }
+    if (task.status === 'CONFIRMED') {
+      return { icon: '✅', label: 'Confirmed', color: 'text-blue-400' };
+    }
+    return null;
+  };
+
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
@@ -155,7 +187,7 @@ export default function RequestsPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Requests Inbox</h1>
-            <p className="text-[#CED4DA]">Triage and convert client-raised job requests</p>
+            <p className="text-[#CED4DA]">Triage and convert client-raised job requests with AI assistance</p>
           </div>
         </div>
 
@@ -196,21 +228,21 @@ export default function RequestsPage() {
           </div>
         </div>
         <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
-          <div className="text-sm text-[#CED4DA] mb-1">Triaged</div>
+          <div className="text-sm text-[#CED4DA] mb-1">AI Auto-Created</div>
           <div className="text-3xl font-semibold text-white">
-            {requests.filter(r => r.status === 'triaged').length}
+            {triageTasks.filter(t => t.status === 'AUTO_CREATED').length}
+          </div>
+        </div>
+        <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
+          <div className="text-sm text-[#CED4DA] mb-1">Awaiting Confirmation</div>
+          <div className="text-3xl font-semibold text-white">
+            {triageTasks.filter(t => t.status === 'AWAITING_CONFIRMATION').length}
           </div>
         </div>
         <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
           <div className="text-sm text-[#CED4DA] mb-1">Converted</div>
           <div className="text-3xl font-semibold text-white">
             {requests.filter(r => r.status === 'converted').length}
-          </div>
-        </div>
-        <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
-          <div className="text-sm text-[#CED4DA] mb-1">Rejected</div>
-          <div className="text-3xl font-semibold text-white">
-            {requests.filter(r => r.status === 'rejected').length}
           </div>
         </div>
       </div>
@@ -232,6 +264,8 @@ export default function RequestsPage() {
           filteredRequests.map((request) => {
             const site = sites.find(s => s.id === request.site_id);
             const client = clients.find(c => c.id === request.client_id);
+            const aiStatus = getAIStatus(request.id);
+            const triageTask = triageTasks.find(t => t.request_id === request.id);
             
             return (
               <div
@@ -244,6 +278,12 @@ export default function RequestsPage() {
                       <h3 className="text-lg font-semibold text-white">{request.title}</h3>
                       {request.request_number && (
                         <span className="text-sm text-[#CED4DA] opacity-50">#{request.request_number}</span>
+                      )}
+                      {aiStatus && (
+                        <Badge className="bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.1)]">
+                          <Brain className="w-3 h-3 mr-1" strokeWidth={1.5} />
+                          <span className={aiStatus.color}>{aiStatus.icon} {aiStatus.label}</span>
+                        </Badge>
                       )}
                     </div>
                     {request.description && (
@@ -289,12 +329,23 @@ export default function RequestsPage() {
                     <Button
                       onClick={() => {
                         setSelectedRequest(request);
-                        setShowConvertDialog(true);
+                        setShowAIPanel(true);
                       }}
                       className="flex-1 bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
                     >
+                      <Brain className="w-4 h-4 mr-2" strokeWidth={1.5} />
+                      {triageTask ? 'View AI Triage' : 'Run AI Triage'}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setShowConvertDialog(true);
+                      }}
+                      variant="outline"
+                      className="border-[rgba(255,255,255,0.08)] text-[#CED4DA] hover:bg-[rgba(255,255,255,0.04)]"
+                    >
                       <CheckCircle className="w-4 h-4 mr-2" strokeWidth={1.5} />
-                      Convert to Job
+                      Manual Convert
                     </Button>
                     <Button
                       onClick={() => {
@@ -336,6 +387,31 @@ export default function RequestsPage() {
           })
         )}
       </div>
+
+      {/* AI Triage Panel Dialog */}
+      <Dialog open={showAIPanel} onOpenChange={setShowAIPanel}>
+        <DialogContent className="glass-panel-strong border-[rgba(255,255,255,0.1)] text-white max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Brain className="w-5 h-5 text-[#E1467C]" strokeWidth={1.5} />
+              AI Helpdesk Triage
+            </DialogTitle>
+            <DialogDescription className="text-[#CED4DA]">
+              Intelligent request classification and job generation
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRequest && (
+            <AITriagePanel
+              request={selectedRequest}
+              triageTask={triageTasks.find(t => t.request_id === selectedRequest.id)}
+              onClose={() => {
+                setShowAIPanel(false);
+                setSelectedRequest(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Convert to Job Dialog */}
       <Dialog open={showConvertDialog} onOpenChange={setShowConvertDialog}>
