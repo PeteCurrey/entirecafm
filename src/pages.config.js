@@ -24,6 +24,7 @@ import ClientJobDetail from './pages/ClientJobDetail';
 import ClientQuotes from './pages/ClientQuotes';
 import ClientInvoices from './pages/ClientInvoices';
 import ClientRequestJob from './pages/ClientRequestJob';
+import Clients from './pages/Clients';
 import Layout from './Layout.jsx';
 
 
@@ -54,6 +55,7 @@ export const PAGES = {
     "ClientQuotes": ClientQuotes,
     "ClientInvoices": ClientInvoices,
     "ClientRequestJob": ClientRequestJob,
+    "Clients": Clients,
 }
 
 export const pagesConfig = {
