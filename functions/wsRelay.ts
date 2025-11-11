@@ -10,8 +10,8 @@ import { createClient } from 'npm:@base44/sdk@0.8.4';
  * Rate limiting: Drop messages if client receives >10/sec
  */
 
-const REDIS_URL = Deno.env.get("REDIS_URL");
-const REDIS_TOKEN = Deno.env.get("REDIS_TOKEN");
+const REDIS_URL = Deno.env.get("UPSTASH_REDIS_REST_URL");
+const REDIS_TOKEN = Deno.env.get("UPSTASH_REDIS_REST_TOKEN");
 const BASE44_APP_ID = Deno.env.get("BASE44_APP_ID");
 
 // In-memory client registry (production would use Redis for distributed state)
@@ -43,6 +43,8 @@ async function subscribeToRedis(topic, callback) {
     return null;
   }
 
+  console.log(`🔔 Subscribing to Redis topic: ${topic}`);
+
   // Upstash Redis supports Server-Sent Events for pub/sub
   const response = await fetch(`${REDIS_URL}/subscribe/${topic}`, {
     headers: {
@@ -70,6 +72,7 @@ async function subscribeToRedis(topic, callback) {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
+              console.log(`📨 Received message on ${topic}:`, data);
               callback(data);
             } catch (err) {
               console.error('Parse error:', err);
@@ -132,7 +135,7 @@ Deno.serve({ port: 8080 }, (req) => {
         connectedAt: new Date(),
       });
 
-      console.log(`Client connected: ${clientId} (org: ${orgId})`);
+      console.log(`✅ Client connected: ${clientId} (org: ${orgId})`);
 
       // Subscribe to Redis topics for this org
       const topics = [
@@ -149,7 +152,7 @@ Deno.serve({ port: 8080 }, (req) => {
               if (client.orgId === orgId && client.socket.readyState === 1) {
                 // Check rate limit
                 if (!checkRateLimit(cId)) {
-                  console.warn(`Rate limit exceeded for ${cId}`);
+                  console.warn(`⚠️ Rate limit exceeded for ${cId}`);
                   continue;
                 }
                 
@@ -180,7 +183,7 @@ Deno.serve({ port: 8080 }, (req) => {
         clients.delete(clientId);
         rateLimits.delete(clientId);
         unsubscribers.forEach(unsub => unsub?.());
-        console.log(`Client disconnected: ${clientId}`);
+        console.log(`❌ Client disconnected: ${clientId}`);
       };
 
     } catch (error) {

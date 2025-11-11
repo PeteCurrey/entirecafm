@@ -1,8 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 // Redis client (Upstash REST API compatible)
-const REDIS_URL = Deno.env.get("REDIS_URL");
-const REDIS_TOKEN = Deno.env.get("REDIS_TOKEN");
+const REDIS_URL = Deno.env.get("UPSTASH_REDIS_REST_URL");
+const REDIS_TOKEN = Deno.env.get("UPSTASH_REDIS_REST_TOKEN");
 
 async function publishToRedis(channel, message) {
   if (!REDIS_URL || !REDIS_TOKEN) {
@@ -22,6 +22,8 @@ async function publishToRedis(channel, message) {
     
     if (!response.ok) {
       console.error('Redis publish failed:', await response.text());
+    } else {
+      console.log(`✅ Published to ${channel}`);
     }
   } catch (error) {
     console.error('Redis publish error:', error);
@@ -84,7 +86,7 @@ Deno.serve(async (req) => {
     });
 
     // Publish to Redis WebSocket topic
-    await publishToRedis(`map.org.${org_id}`, {
+    const publishPayload = {
       type: 'engineer_location_update',
       engineer: {
         id: engineer_id,
@@ -94,9 +96,12 @@ Deno.serve(async (req) => {
         lng,
         accuracy,
         timestamp: locationTimestamp,
+        battery_level,
       },
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    await publishToRedis(`map.org.${org_id}`, publishPayload);
 
     // Create audit log
     await base44.asServiceRole.entities.AuditLog.create({
@@ -111,7 +116,8 @@ Deno.serve(async (req) => {
     return Response.json({ 
       success: true, 
       location,
-      published: !!REDIS_URL 
+      published: !!REDIS_URL,
+      redis_configured: !!REDIS_URL && !!REDIS_TOKEN
     });
 
   } catch (error) {
