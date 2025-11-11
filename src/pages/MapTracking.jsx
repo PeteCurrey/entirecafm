@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import MapboxLiveMap from "../components/map/MapboxLiveMap";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import LiveMap from "../components/map/LiveMap";
 import { MapPin, User, Navigation, Clock, Phone, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function MapTrackingPage() {
+  const navigate = useNavigate();
   const [selectedEngineer, setSelectedEngineer] = useState(null);
   const [user, setUser] = useState(null);
 
@@ -57,6 +60,12 @@ export default function MapTrackingPage() {
     },
   ];
 
+  const handleJobClick = (job) => {
+    if (job && job.id) {
+      navigate(`${createPageUrl("JobDetail")}?id=${job.id}`);
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col lg:flex-row">
       {/* Left Sidebar - Engineer List */}
@@ -106,9 +115,10 @@ export default function MapTrackingPage() {
       {/* Main Map - Full Width */}
       <div className="flex-1 relative">
         {user && (
-          <MapboxLiveMap 
+          <LiveMap 
             orgId={user.org_id || 'default-org'} 
             compact={false}
+            onJobClick={handleJobClick}
           />
         )}
       </div>
