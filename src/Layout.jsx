@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -44,7 +45,7 @@ const navigationSections = [
       { title: "PPM Planner", url: createPageUrl("PPMPlanner"), icon: Calendar, roles: ["admin", "user"] },
       { title: "Assets", url: createPageUrl("Assets"), icon: Database, roles: ["admin", "user"] },
       { title: "Sites", url: createPageUrl("Sites"), icon: MapPin, roles: ["admin", "user"] },
-      { title: "Clients", url: createPageUrl("Sites"), icon: Building2, roles: ["admin", "user"] },
+      { title: "Clients", url: createPageUrl("Clients"), icon: Building2, roles: ["admin", "user"] },
       { title: "Engineers", url: createPageUrl("Team"), icon: Users, roles: ["admin"] },
       { title: "Contractors", url: createPageUrl("Team"), icon: UserCheck, roles: ["admin"] },
       { title: "Invoices", url: createPageUrl("Invoices"), icon: DollarSign, roles: ["admin", "user"] },
@@ -59,6 +60,12 @@ const navigationSections = [
       { title: "AI Director Dashboard", url: createPageUrl("AIDirector"), icon: TrendingUp, roles: ["admin"] },
       { title: "AI Accounts Dashboard", url: createPageUrl("AIAccounts"), icon: CreditCard, roles: ["admin"] },
       { title: "AI Marketing Dashboard", url: createPageUrl("AIMarketing"), icon: Megaphone, roles: ["admin"] },
+    ]
+  },
+  {
+    title: "DEVELOPMENT",
+    items: [
+      { title: "Test Redis Real-Time", url: createPageUrl("TestRedis"), icon: Bot, roles: ["admin"] },
     ]
   }
 ];
