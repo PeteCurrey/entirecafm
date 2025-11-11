@@ -8,7 +8,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  FileText,
   CheckCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 
 export default function ClientsPage() {
   const queryClient = useQueryClient();
@@ -290,13 +288,14 @@ export default function ClientsPage() {
             </div>
 
             <div className="flex items-center space-x-2">
-              <Checkbox
+              <input
+                type="checkbox"
                 id="requires_po"
                 checked={formData.requires_po}
-                onCheckedChange={(checked) => setFormData({...formData, requires_po: checked})}
-                className="border-[rgba(255,255,255,0.08)]"
+                onChange={(e) => setFormData({...formData, requires_po: e.target.checked})}
+                className="w-4 h-4 rounded border-[rgba(255,255,255,0.08)]"
               />
-              <Label htmlFor="requires_po" className="text-white">
+              <Label htmlFor="requires_po" className="text-white cursor-pointer">
                 Require Purchase Order before job start
               </Label>
             </div>
