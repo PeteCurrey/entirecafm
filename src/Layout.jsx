@@ -18,22 +18,49 @@ import {
   X,
   BarChart3,
   FolderOpen,
-  Building2
+  Building2,
+  Map,
+  Bot,
+  Inbox,
+  CheckSquare,
+  UserCheck,
+  TrendingUp,
+  CreditCard,
+  Megaphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const navigationItems = [
-  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard, roles: ["admin", "user"] },
-  { title: "Jobs", url: createPageUrl("Jobs"), icon: Wrench, roles: ["admin", "user"] },
-  { title: "Scheduling", url: createPageUrl("Scheduling"), icon: Calendar, roles: ["admin", "user"] },
-  { title: "Quotes", url: createPageUrl("Quotes"), icon: ClipboardList, roles: ["admin", "user"] },
-  { title: "Invoices", url: createPageUrl("Invoices"), icon: DollarSign, roles: ["admin", "user"] },
-  { title: "PPM Planner", url: createPageUrl("PPMPlanner"), icon: Calendar, roles: ["admin", "user"] },
-  { title: "Clients & Sites", url: createPageUrl("Sites"), icon: MapPin, roles: ["admin", "user"] },
-  { title: "Assets", url: createPageUrl("Assets"), icon: Database, roles: ["admin", "user"] },
-  { title: "Documents", url: createPageUrl("Documents"), icon: FolderOpen, roles: ["admin", "user"] },
-  { title: "Engineers", url: createPageUrl("Team"), icon: Users, roles: ["admin"] },
-  { title: "Reports", url: createPageUrl("Reports"), icon: BarChart3, roles: ["admin"] },
+const navigationSections = [
+  {
+    title: "OPERATIONS",
+    items: [
+      { title: "Operations Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard, roles: ["admin", "user"] },
+      { title: "Map & Tracking", url: createPageUrl("MapTracking"), icon: Map, roles: ["admin", "user"] },
+      { title: "AI Helpdesk", url: createPageUrl("AIHelpdesk"), icon: Bot, roles: ["admin", "user"] },
+      { title: "Jobs", url: createPageUrl("Jobs"), icon: Wrench, roles: ["admin", "user"] },
+      { title: "Requests", url: createPageUrl("Requests"), icon: Inbox, roles: ["admin", "user"] },
+      { title: "Quotes", url: createPageUrl("Quotes"), icon: ClipboardList, roles: ["admin", "user"] },
+      { title: "Schedule", url: createPageUrl("Scheduling"), icon: Calendar, roles: ["admin", "user"] },
+      { title: "PPM Planner", url: createPageUrl("PPMPlanner"), icon: Calendar, roles: ["admin", "user"] },
+      { title: "Assets", url: createPageUrl("Assets"), icon: Database, roles: ["admin", "user"] },
+      { title: "Sites", url: createPageUrl("Sites"), icon: MapPin, roles: ["admin", "user"] },
+      { title: "Clients", url: createPageUrl("Sites"), icon: Building2, roles: ["admin", "user"] },
+      { title: "Engineers", url: createPageUrl("Team"), icon: Users, roles: ["admin"] },
+      { title: "Contractors", url: createPageUrl("Team"), icon: UserCheck, roles: ["admin"] },
+      { title: "Invoices", url: createPageUrl("Invoices"), icon: DollarSign, roles: ["admin", "user"] },
+      { title: "Documents", url: createPageUrl("Documents"), icon: FolderOpen, roles: ["admin", "user"] },
+      { title: "Reports", url: createPageUrl("Reports"), icon: BarChart3, roles: ["admin"] },
+      { title: "Approvals", url: createPageUrl("Approvals"), icon: CheckSquare, roles: ["admin"] },
+    ]
+  },
+  {
+    title: "AI OPERATIONS",
+    items: [
+      { title: "AI Director Dashboard", url: createPageUrl("AIDirector"), icon: TrendingUp, roles: ["admin"] },
+      { title: "AI Accounts Dashboard", url: createPageUrl("AIAccounts"), icon: CreditCard, roles: ["admin"] },
+      { title: "AI Marketing Dashboard", url: createPageUrl("AIMarketing"), icon: Megaphone, roles: ["admin"] },
+    ]
+  }
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -59,9 +86,10 @@ export default function Layout({ children, currentPageName }) {
     base44.auth.logout();
   };
 
-  const filteredNav = navigationItems.filter(item => 
-    !item.roles || item.roles.includes(user?.role)
-  );
+  const filteredSections = navigationSections.map(section => ({
+    ...section,
+    items: section.items.filter(item => !item.roles || item.roles.includes(user?.role))
+  })).filter(section => section.items.length > 0);
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0D1117]">
@@ -115,6 +143,16 @@ export default function Layout({ children, currentPageName }) {
         .nav-hover:hover {
           background: rgba(255, 255, 255, 0.08);
         }
+
+        .section-label {
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: rgba(206, 212, 218, 0.5);
+          margin-bottom: 8px;
+          margin-top: 20px;
+        }
       `}</style>
 
       <div className="flex h-screen">
@@ -133,23 +171,28 @@ export default function Layout({ children, currentPageName }) {
           </div>
 
           <nav className="flex-1 space-y-1">
-            {filteredNav.map((item) => {
-              const isActive = location.pathname === item.url;
-              return (
-                <Link
-                  key={item.title}
-                  to={item.url}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl nav-hover text-sm transition-all ${
-                    isActive ? 'glass-panel-strong' : ''
-                  }`}
-                >
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-body'}`} strokeWidth={1.5} />
-                  <span className={`font-medium ${isActive ? 'text-white' : 'text-body'}`}>
-                    {item.title}
-                  </span>
-                </Link>
-              );
-            })}
+            {filteredSections.map((section, sectionIndex) => (
+              <div key={section.title}>
+                {sectionIndex > 0 && <div className="section-label">{section.title}</div>}
+                {section.items.map((item) => {
+                  const isActive = location.pathname === item.url;
+                  return (
+                    <Link
+                      key={item.title}
+                      to={item.url}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl nav-hover text-sm transition-all ${
+                        isActive ? 'glass-panel-strong' : ''
+                      }`}
+                    >
+                      <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-body'}`} strokeWidth={1.5} />
+                      <span className={`font-medium ${isActive ? 'text-white' : 'text-body'}`}>
+                        {item.title}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
 
           {user && (
@@ -210,24 +253,29 @@ export default function Layout({ children, currentPageName }) {
         {mobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-40 glass-panel-strong pt-20 overflow-y-auto">
             <nav className="p-6 space-y-2">
-              {filteredNav.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <Link
-                    key={item.title}
-                    to={item.url}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl nav-hover ${
-                      isActive ? 'glass-panel-strong' : ''
-                    }`}
-                  >
-                    <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-body'}`} strokeWidth={1.5} />
-                    <span className={`font-medium ${isActive ? 'text-white' : 'text-body'}`}>
-                      {item.title}
-                    </span>
-                  </Link>
-                );
-              })}
+              {filteredSections.map((section, sectionIndex) => (
+                <div key={section.title}>
+                  {sectionIndex > 0 && <div className="section-label">{section.title}</div>}
+                  {section.items.map((item) => {
+                    const isActive = location.pathname === item.url;
+                    return (
+                      <Link
+                        key={item.title}
+                        to={item.url}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl nav-hover ${
+                          isActive ? 'glass-panel-strong' : ''
+                        }`}
+                      >
+                        <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-body'}`} strokeWidth={1.5} />
+                        <span className={`font-medium ${isActive ? 'text-white' : 'text-body'}`}>
+                          {item.title}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
             </nav>
           </div>
         )}

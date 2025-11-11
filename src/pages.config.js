@@ -11,6 +11,13 @@ import Team from './pages/Team';
 import Scheduling from './pages/Scheduling';
 import Documents from './pages/Documents';
 import Reports from './pages/Reports';
+import MapTracking from './pages/MapTracking';
+import Requests from './pages/Requests';
+import AIHelpdesk from './pages/AIHelpdesk';
+import Approvals from './pages/Approvals';
+import AIDirector from './pages/AIDirector';
+import AIAccounts from './pages/AIAccounts';
+import AIMarketing from './pages/AIMarketing';
 import Layout from './Layout.jsx';
 
 
@@ -28,6 +35,13 @@ export const PAGES = {
     "Scheduling": Scheduling,
     "Documents": Documents,
     "Reports": Reports,
+    "MapTracking": MapTracking,
+    "Requests": Requests,
+    "AIHelpdesk": AIHelpdesk,
+    "Approvals": Approvals,
+    "AIDirector": AIDirector,
+    "AIAccounts": AIAccounts,
+    "AIMarketing": AIMarketing,
 }
 
 export const pagesConfig = {

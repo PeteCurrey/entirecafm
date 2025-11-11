@@ -13,12 +13,13 @@ import {
   TrendingUp,
   Users,
   ArrowRight,
-  ChevronRight
+  ChevronRight,
+  Map
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import LiveMap from "../components/dashboard/LiveMap";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -56,6 +57,11 @@ export default function Dashboard() {
     queryFn: () => base44.entities.PPMSchedule.list('-next_due_date', 10),
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list(),
+  });
+
   // Stats calculations
   const activeJobs = jobs.filter(j => !['completed', 'cancelled'].includes(j.status)).length;
   const slaAtRisk = jobs.filter(j => {
@@ -72,10 +78,7 @@ export default function Dashboard() {
     return dueDate >= today && dueDate <= weekFromNow;
   }).length;
 
-  const overdueJobs = jobs.filter(j => {
-    if (!j.scheduled_date || ['completed', 'cancelled'].includes(j.status)) return false;
-    return new Date(j.scheduled_date) < new Date();
-  }).length;
+  const activeEngineers = users.filter(u => u.engineer_details?.is_available).length;
 
   const recentJobs = jobs.slice(0, 5);
 
@@ -149,22 +152,73 @@ export default function Dashboard() {
         <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer">
           <div className="flex items-start justify-between mb-4">
             <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
-              <Clock className="w-6 h-6 text-orange-400" strokeWidth={1.5} />
+              <Users className="w-6 h-6 text-green-400" strokeWidth={1.5} />
             </div>
           </div>
-          <h3 className="text-3xl font-bold text-white mb-1">{overdueJobs}</h3>
-          <p className="text-sm text-body">Overdue</p>
+          <h3 className="text-3xl font-bold text-white mb-1">{activeEngineers}</h3>
+          <p className="text-sm text-body">Engineers Active</p>
+        </div>
+      </div>
+
+      {/* Map + Workload Heatmap Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Live Operations Map */}
+        <Link to={createPageUrl("MapTracking")} className="block">
+          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Map className="w-5 h-5 text-blue-400" strokeWidth={1.5} />
+                Live Operations Map
+              </h2>
+              <ArrowRight className="w-5 h-5 text-body" strokeWidth={1.5} />
+            </div>
+            <LiveMap compact={true} />
+          </div>
+        </Link>
+
+        {/* Workload Heatmap */}
+        <div className="glass-panel rounded-2xl p-6 border border-divider">
+          <h2 className="text-lg font-bold text-white mb-4">Engineer Workload</h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-body text-sm">Ryan Mitchell</span>
+              <div className="flex items-center gap-2">
+                <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-green-400" style={{ width: '65%' }}></div>
+                </div>
+                <span className="text-xs text-body">3 jobs</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-body text-sm">Mia Chen</span>
+              <div className="flex items-center gap-2">
+                <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-yellow-400" style={{ width: '85%' }}></div>
+                </div>
+                <span className="text-xs text-body">5 jobs</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-body text-sm">James Foster</span>
+              <div className="flex items-center gap-2">
+                <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-400" style={{ width: '45%' }}></div>
+                </div>
+                <span className="text-xs text-body">2 jobs</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Job Workflow Funnel */}
       <div className="glass-panel rounded-2xl p-6 border border-divider">
-        <h2 className="text-xl font-bold text-white mb-6">Job Workflow</h2>
+        <h2 className="text-xl font-bold text-white mb-6">Job Pipeline</h2>
         <div className="flex items-center justify-between gap-3">
           {workflowStages.map((stage, index) => (
             <React.Fragment key={stage.label}>
               <div className="flex-1 text-center">
-                <div className="glass-panel rounded-xl p-4 mb-2">
+                <div className="glass-panel rounded-xl p-4 mb-2 hover:glass-panel-strong transition-all">
                   <p className="text-2xl font-bold text-white mb-1">{stage.count}</p>
                   <p className="text-xs text-body uppercase tracking-wider">{stage.label}</p>
                 </div>
