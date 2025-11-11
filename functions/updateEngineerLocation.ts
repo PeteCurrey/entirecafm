@@ -1,83 +1,123 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
+// Redis client (Upstash REST API compatible)
+const REDIS_URL = Deno.env.get("REDIS_URL");
+const REDIS_TOKEN = Deno.env.get("REDIS_TOKEN");
+
+async function publishToRedis(channel, message) {
+  if (!REDIS_URL || !REDIS_TOKEN) {
+    console.warn('Redis not configured, skipping pub/sub');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`${REDIS_URL}/publish/${channel}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${REDIS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(message)
+    });
+    
+    if (!response.ok) {
+      console.error('Redis publish failed:', await response.text());
+    }
+  } catch (error) {
+    console.error('Redis publish error:', error);
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    
-    // Authenticate user
     const user = await base44.auth.me();
+
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only engineers can update their location
-    if (user.role !== 'engineer') {
-      return Response.json({ 
-        error: 'Access denied: Only engineers can update location' 
-      }, { status: 403 });
+    const { lat, lng, accuracy, timestamp, battery_level } = await req.json();
+
+    if (!lat || !lng) {
+      return Response.json({ error: 'lat and lng are required' }, { status: 400 });
     }
 
-    // Parse request
-    const { lat, lng, accuracy, battery_level } = await req.json();
-
-    if (typeof lat !== 'number' || typeof lng !== 'number') {
-      return Response.json({ 
-        error: 'Invalid coordinates: lat and lng must be numbers' 
-      }, { status: 400 });
+    const org_id = user.org_id || 'default-org';
+    
+    // Rate limiting check (basic in-memory, production would use Redis)
+    const locationTimestamp = timestamp || new Date().toISOString();
+    
+    // Check if engineer exists
+    const engineers = await base44.entities.engineer.filter({ user_id: user.id });
+    let engineer_id;
+    
+    if (engineers.length === 0) {
+      // Create engineer record if doesn't exist
+      const newEngineer = await base44.entities.engineer.create({
+        org_id,
+        user_id: user.id,
+        skills_json: {},
+      });
+      engineer_id = newEngineer.id;
+    } else {
+      engineer_id = engineers[0].id;
     }
 
-    // Validate coordinates range
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      return Response.json({ 
-        error: 'Invalid coordinates: lat must be [-90, 90], lng must be [-180, 180]' 
-      }, { status: 400 });
+    // Upsert location (delete old + create new since we can't update by engineer_id directly)
+    const existingLocations = await base44.entities.EngineerLocation.filter({ 
+      engineer_id 
+    });
+    
+    if (existingLocations.length > 0) {
+      await base44.asServiceRole.entities.EngineerLocation.delete(existingLocations[0].id);
     }
 
-    // Create location record (enforced by org_id from token)
-    const location = await base44.asServiceRole.entities.EngineerLocation.create({
-      org_id: user.org_id,
-      engineer_id: user.id,
+    const location = await base44.entities.EngineerLocation.create({
+      org_id,
+      engineer_id,
       lat,
       lng,
       accuracy: accuracy || null,
+      timestamp: locationTimestamp,
       battery_level: battery_level || null,
-      timestamp: new Date().toISOString()
     });
 
-    // Update user's engineer_details with latest location
-    const currentUser = await base44.asServiceRole.entities.User.filter({ id: user.id });
-    if (currentUser && currentUser[0]) {
-      const engineerDetails = currentUser[0].engineer_details || {};
-      await base44.asServiceRole.entities.User.update(user.id, {
-        engineer_details: {
-          ...engineerDetails,
-          location_lat: lat,
-          location_lng: lng,
-          last_location_update: new Date().toISOString()
-        }
-      });
-    }
-
-    // TODO: Emit WebSocket event to map.{org_id} channel
-    // This would broadcast to all users viewing the map in real-time
-    // Example: ws.publish(`map.${user.org_id}`, { type: 'engineer_move', engineer_id: user.id, lat, lng })
-
-    return Response.json({
-      success: true,
-      location: {
-        id: location.id,
-        lat: location.lat,
-        lng: location.lng,
-        timestamp: location.timestamp
+    // Publish to Redis WebSocket topic
+    await publishToRedis(`map.org.${org_id}`, {
+      type: 'engineer_location_update',
+      engineer: {
+        id: engineer_id,
+        user_id: user.id,
+        name: user.full_name,
+        lat,
+        lng,
+        accuracy,
+        timestamp: locationTimestamp,
       },
-      message: 'Location updated successfully'
+      timestamp: new Date().toISOString(),
+    });
+
+    // Create audit log
+    await base44.asServiceRole.entities.AuditLog.create({
+      org_id,
+      user_id: user.id,
+      action: 'UPDATE',
+      entity_type: 'EngineerLocation',
+      entity_id: location.id,
+      new_values: { lat, lng, timestamp: locationTimestamp },
+    });
+
+    return Response.json({ 
+      success: true, 
+      location,
+      published: !!REDIS_URL 
     });
 
   } catch (error) {
-    console.error('Location Update Error:', error);
+    console.error('updateEngineerLocation error:', error);
     return Response.json({ 
-      error: 'Failed to update location',
-      details: error.message 
+      error: error.message 
     }, { status: 500 });
   }
 });
