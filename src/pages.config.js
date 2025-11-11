@@ -3,6 +3,7 @@ import Jobs from './pages/Jobs';
 import JobDetail from './pages/JobDetail';
 import EngineerApp from './pages/EngineerApp';
 import Sites from './pages/Sites';
+import Assets from './pages/Assets';
 import Layout from './Layout.jsx';
 
 
@@ -12,6 +13,7 @@ export const PAGES = {
     "JobDetail": JobDetail,
     "EngineerApp": EngineerApp,
     "Sites": Sites,
+    "Assets": Assets,
 }
 
 export const pagesConfig = {
