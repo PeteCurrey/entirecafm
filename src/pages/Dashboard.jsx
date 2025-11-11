@@ -20,6 +20,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import LiveMap from "../components/dashboard/LiveMap";
+import WorkloadHeatmap from "../components/dashboard/WorkloadHeatmap";
+import ActivityFeed from "../components/dashboard/ActivityFeed";
+import TopNav from "../components/dashboard/TopNav";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -42,16 +45,6 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Job.list('-created_date', 50),
   });
 
-  const { data: quotes = [] } = useQuery({
-    queryKey: ['quotes'],
-    queryFn: () => base44.entities.Quote.list('-created_date', 20),
-  });
-
-  const { data: invoices = [] } = useQuery({
-    queryKey: ['invoices'],
-    queryFn: () => base44.entities.Invoice.list('-created_date', 20),
-  });
-
   const { data: ppmSchedules = [] } = useQuery({
     queryKey: ['ppm-schedules'],
     queryFn: () => base44.entities.PPMSchedule.list('-next_due_date', 10),
@@ -69,7 +62,7 @@ export default function Dashboard() {
     return new Date(j.sla_due_date) < new Date();
   }).length;
   
-  const ppmThisWeek = ppmSchedules.filter(s => {
+  const ppmDue = ppmSchedules.filter(s => {
     if (!s.next_due_date) return false;
     const dueDate = new Date(s.next_due_date);
     const today = new Date();
@@ -78,9 +71,10 @@ export default function Dashboard() {
     return dueDate >= today && dueDate <= weekFromNow;
   }).length;
 
-  const activeEngineers = users.filter(u => u.engineer_details?.is_available).length;
-
-  const recentJobs = jobs.slice(0, 5);
+  const overdueJobs = jobs.filter(j => {
+    if (!j.scheduled_date || ['completed', 'cancelled'].includes(j.status)) return false;
+    return new Date(j.scheduled_date) < new Date();
+  }).length;
 
   const statusColors = {
     raised: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
@@ -91,13 +85,6 @@ export default function Dashboard() {
     cancelled: 'bg-red-500/10 text-red-400 border-red-500/30',
   };
 
-  const priorityColors = {
-    low: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
-    medium: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-    high: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
-    critical: 'bg-[#E1467C]/10 text-[#E1467C] border-[#E1467C]/30',
-  };
-
   // Job workflow funnel data
   const workflowStages = [
     { label: 'New', count: jobs.filter(j => j.status === 'raised').length },
@@ -105,220 +92,140 @@ export default function Dashboard() {
     { label: 'En Route', count: jobs.filter(j => j.status === 'en_route').length },
     { label: 'On Site', count: jobs.filter(j => j.status === 'on_site').length },
     { label: 'Complete', count: jobs.filter(j => j.status === 'completed').length },
+    { label: 'Invoiced', count: jobs.filter(j => j.invoice_id).length },
   ];
 
+  const totalJobs = jobs.length || 1;
+  const flowEfficiency = workflowStages.map(stage => ({
+    ...stage,
+    percentage: ((stage.count / totalJobs) * 100).toFixed(0)
+  }));
+
   return (
-    <div className="p-6 lg:p-8 space-y-8">
-      {/* Header */}
-      <div className="glass-panel rounded-2xl p-6 border border-divider">
-        <h1 className="text-3xl font-bold text-white mb-2">
-          Welcome back, {user?.full_name || 'User'}
-        </h1>
-        <p className="text-body">Here's your operational overview for today</p>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer">
-          <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
-              <Wrench className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
+    <>
+      <TopNav user={user} />
+      
+      <div className="pt-16 p-6 lg:p-8 space-y-8">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer kpi-card">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
+                <Wrench className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
+              </div>
             </div>
+            <h3 className="text-3xl font-bold text-white mb-1">{activeJobs}</h3>
+            <p className="text-sm text-body">Open Jobs</p>
           </div>
-          <h3 className="text-3xl font-bold text-white mb-1">{activeJobs}</h3>
-          <p className="text-sm text-body">Open Jobs</p>
+
+          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer kpi-card">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-[#E1467C]" strokeWidth={1.5} />
+              </div>
+              {slaAtRisk > 0 && <div className="pulse-dot" />}
+            </div>
+            <h3 className="text-3xl font-bold text-white mb-1">{slaAtRisk}</h3>
+            <p className="text-sm text-body">SLA At Risk</p>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer kpi-card">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-purple-400" strokeWidth={1.5} />
+              </div>
+            </div>
+            <h3 className="text-3xl font-bold text-white mb-1">{ppmDue}</h3>
+            <p className="text-sm text-body">PPM Due</p>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer kpi-card">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
+                <Clock className="w-6 h-6 text-orange-400" strokeWidth={1.5} />
+              </div>
+              {overdueJobs > 0 && <div className="pulse-dot" />}
+            </div>
+            <h3 className="text-3xl font-bold text-white mb-1">{overdueJobs}</h3>
+            <p className="text-sm text-body">Overdue</p>
+          </div>
         </div>
 
-        <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer">
-          <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-[#E1467C]" strokeWidth={1.5} />
-            </div>
-          </div>
-          <h3 className="text-3xl font-bold text-white mb-1">{slaAtRisk}</h3>
-          <p className="text-sm text-body">SLA At Risk</p>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer">
-          <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-purple-400" strokeWidth={1.5} />
-            </div>
-          </div>
-          <h3 className="text-3xl font-bold text-white mb-1">{ppmThisWeek}</h3>
-          <p className="text-sm text-body">PPM This Week</p>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer">
-          <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
-              <Users className="w-6 h-6 text-green-400" strokeWidth={1.5} />
-            </div>
-          </div>
-          <h3 className="text-3xl font-bold text-white mb-1">{activeEngineers}</h3>
-          <p className="text-sm text-body">Engineers Active</p>
-        </div>
-      </div>
-
-      {/* Map + Workload Heatmap Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Live Operations Map */}
-        <Link to={createPageUrl("MapTracking")} className="block">
-          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer">
+        {/* Map + Workload Heatmap Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="glass-panel rounded-2xl p-6 border border-divider">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Map className="w-5 h-5 text-blue-400" strokeWidth={1.5} />
                 Live Operations Map
               </h2>
-              <ArrowRight className="w-5 h-5 text-body" strokeWidth={1.5} />
             </div>
             <LiveMap compact={true} />
           </div>
-        </Link>
 
-        {/* Workload Heatmap */}
+          <WorkloadHeatmap />
+        </div>
+
+        {/* Job Workflow Funnel */}
         <div className="glass-panel rounded-2xl p-6 border border-divider">
-          <h2 className="text-lg font-bold text-white mb-4">Engineer Workload</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-body text-sm">Ryan Mitchell</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-green-400" style={{ width: '65%' }}></div>
-                </div>
-                <span className="text-xs text-body">3 jobs</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-body text-sm">Mia Chen</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-yellow-400" style={{ width: '85%' }}></div>
-                </div>
-                <span className="text-xs text-body">5 jobs</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-body text-sm">James Foster</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-400" style={{ width: '45%' }}></div>
-                </div>
-                <span className="text-xs text-body">2 jobs</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Job Workflow Funnel */}
-      <div className="glass-panel rounded-2xl p-6 border border-divider">
-        <h2 className="text-xl font-bold text-white mb-6">Job Pipeline</h2>
-        <div className="flex items-center justify-between gap-3">
-          {workflowStages.map((stage, index) => (
-            <React.Fragment key={stage.label}>
-              <div className="flex-1 text-center">
-                <div className="glass-panel rounded-xl p-4 mb-2 hover:glass-panel-strong transition-all">
-                  <p className="text-2xl font-bold text-white mb-1">{stage.count}</p>
-                  <p className="text-xs text-body uppercase tracking-wider">{stage.label}</p>
-                </div>
-              </div>
-              {index < workflowStages.length - 1 && (
-                <ChevronRight className="w-5 h-5 text-body/50 flex-shrink-0" strokeWidth={1.5} />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Jobs */}
-      <div className="glass-panel rounded-2xl p-6 border border-divider">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white">Recent Activity</h2>
-          <Link to={createPageUrl("Jobs")}>
-            <Button variant="ghost" className="text-body hover:text-white hover:bg-white/10">
-              View All
-              <ArrowRight className="w-4 h-4 ml-2" strokeWidth={1.5} />
-            </Button>
-          </Link>
-        </div>
-
-        <div className="space-y-3">
-          {recentJobs.length === 0 ? (
-            <div className="text-center py-12 text-body">
-              <Wrench className="w-12 h-12 mx-auto mb-3 opacity-50" strokeWidth={1.5} />
-              <p>No jobs yet. Create your first job to get started!</p>
-            </div>
-          ) : (
-            recentJobs.map((job) => (
-              <Link
-                key={job.id}
-                to={createPageUrl("JobDetail") + `?id=${job.id}`}
-                className="block"
-              >
-                <div className="glass-panel rounded-xl p-4 border border-divider hover:glass-panel-strong transition-all">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-white mb-1">{job.title}</h3>
-                      <p className="text-sm text-body line-clamp-1">{job.description}</p>
+          <h2 className="text-xl font-bold text-white mb-6">Job Pipeline Progression</h2>
+          <div className="space-y-4">
+            {/* Visual Funnel */}
+            <div className="flex items-center justify-between gap-2">
+              {flowEfficiency.map((stage, index) => (
+                <React.Fragment key={stage.label}>
+                  <div className="flex-1 text-center">
+                    <div className="glass-panel rounded-xl p-4 hover:glass-panel-strong transition-all cursor-pointer">
+                      <p className="text-2xl font-bold text-white mb-1">{stage.count}</p>
+                      <p className="text-xs text-body uppercase tracking-wider mb-1">{stage.label}</p>
+                      <p className="text-xs text-[#E1467C] font-semibold">{stage.percentage}%</p>
                     </div>
-                    <Badge className={`ml-4 ${priorityColors[job.priority]} border`}>
-                      {job.priority}
-                    </Badge>
                   </div>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <Badge className={`${statusColors[job.status]} border`}>
-                      {job.status.replace('_', ' ')}
-                    </Badge>
-                    {job.job_type && (
-                      <span className="text-xs text-body uppercase tracking-wider">{job.job_type}</span>
-                    )}
-                    {job.scheduled_date && (
-                      <span className="text-xs text-body flex items-center gap-1">
-                        <Calendar className="w-3 h-3" strokeWidth={1.5} />
-                        {format(new Date(job.scheduled_date), 'MMM d, yyyy')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))
-          )}
+                  {index < flowEfficiency.length - 1 && (
+                    <ChevronRight className="w-5 h-5 text-body/50 flex-shrink-0" strokeWidth={1.5} />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+
+            {/* Flow Efficiency Indicator */}
+            <div className="flex items-center justify-center gap-2 text-xs text-body">
+              <span>Flow Efficiency:</span>
+              <span className="text-white font-semibold">
+                {((jobs.filter(j => j.status === 'completed').length / totalJobs) * 100).toFixed(0)}%
+              </span>
+              <span>completion rate</span>
+            </div>
+          </div>
         </div>
+
+        {/* Activity Feed */}
+        <ActivityFeed />
+
+        <style>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+          }
+
+          .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #E1467C;
+            animation: pulse 2s ease-in-out infinite;
+          }
+
+          .kpi-card {
+            animation: fadeIn 0.3s ease-in-out;
+          }
+
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
       </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link to={createPageUrl("Jobs") + "?new=true"} className="block">
-          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all h-full">
-            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center mb-4">
-              <Wrench className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Create New Job</h3>
-            <p className="text-sm text-body">Log a reactive or emergency job</p>
-          </div>
-        </Link>
-
-        <Link to={createPageUrl("PPMPlanner")} className="block">
-          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all h-full">
-            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center mb-4">
-              <Calendar className="w-6 h-6 text-purple-400" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-2">View PPM Schedule</h3>
-            <p className="text-sm text-body">Manage planned maintenance</p>
-          </div>
-        </Link>
-
-        <Link to={createPageUrl("Quotes") + "?new=true"} className="block">
-          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all h-full">
-            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center mb-4">
-              <DollarSign className="w-6 h-6 text-green-400" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Create Quote</h3>
-            <p className="text-sm text-body">Generate a new quote for approval</p>
-          </div>
-        </Link>
-      </div>
-    </div>
+    </>
   );
 }
