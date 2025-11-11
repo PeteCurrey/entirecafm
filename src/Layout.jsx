@@ -27,7 +27,8 @@ import {
   UserCheck,
   TrendingUp,
   CreditCard,
-  Megaphone
+  Megaphone,
+  Navigation // Added Navigation icon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -63,8 +64,9 @@ const navigationSections = [
     ]
   },
   {
-    title: "DEVELOPMENT",
+    title: "TESTING & DEV", // Changed title
     items: [
+      { title: "Engineer Simulator", url: createPageUrl("EngineerSimulator"), icon: Navigation, roles: ["admin"] }, // New item
       { title: "Test Redis Real-Time", url: createPageUrl("TestRedis"), icon: Bot, roles: ["admin"] },
     ]
   }
