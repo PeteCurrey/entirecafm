@@ -15,19 +15,25 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  BarChart3,
+  FolderOpen,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard, roles: ["admin", "user"] },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Wrench, roles: ["admin", "user"] },
-  { title: "PPM Schedule", url: createPageUrl("PPMSchedule"), icon: Calendar, roles: ["admin", "user"] },
+  { title: "Scheduling", url: createPageUrl("Scheduling"), icon: Calendar, roles: ["admin", "user"] },
   { title: "Quotes", url: createPageUrl("Quotes"), icon: ClipboardList, roles: ["admin", "user"] },
   { title: "Invoices", url: createPageUrl("Invoices"), icon: DollarSign, roles: ["admin", "user"] },
+  { title: "PPM Planner", url: createPageUrl("PPMPlanner"), icon: Calendar, roles: ["admin", "user"] },
+  { title: "Clients & Sites", url: createPageUrl("Sites"), icon: MapPin, roles: ["admin", "user"] },
   { title: "Assets", url: createPageUrl("Assets"), icon: Database, roles: ["admin", "user"] },
-  { title: "Sites", url: createPageUrl("Sites"), icon: MapPin, roles: ["admin", "user"] },
-  { title: "Team", url: createPageUrl("Team"), icon: Users, roles: ["admin"] },
+  { title: "Documents", url: createPageUrl("Documents"), icon: FolderOpen, roles: ["admin", "user"] },
+  { title: "Engineers", url: createPageUrl("Team"), icon: Users, roles: ["admin"] },
+  { title: "Reports", url: createPageUrl("Reports"), icon: BarChart3, roles: ["admin"] },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -114,7 +120,7 @@ export default function Layout({ children, currentPageName }) {
 
       <div className="flex h-screen">
         {/* Sidebar - Desktop */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-72 p-6 glass-effect border-r border-white/20">
+        <aside className="hidden lg:flex lg:flex-col lg:w-72 p-6 glass-effect border-r border-white/20 overflow-y-auto">
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-xl glass-effect-strong flex items-center justify-center">
@@ -127,14 +133,14 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
 
-          <nav className="flex-1 space-y-2">
+          <nav className="flex-1 space-y-1">
             {filteredNav.map((item) => {
               const isActive = location.pathname === item.url;
               return (
                 <Link
                   key={item.title}
                   to={item.url}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl glass-hover ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl glass-hover text-sm ${
                     isActive ? 'glass-effect-strong' : ''
                   }`}
                 >
@@ -203,7 +209,7 @@ export default function Layout({ children, currentPageName }) {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-40 glass-effect-strong pt-20">
+          <div className="lg:hidden fixed inset-0 z-40 glass-effect-strong pt-20 overflow-y-auto">
             <nav className="p-6 space-y-2">
               {filteredNav.map((item) => {
                 const isActive = location.pathname === item.url;

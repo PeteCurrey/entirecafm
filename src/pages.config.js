@@ -4,6 +4,8 @@ import JobDetail from './pages/JobDetail';
 import EngineerApp from './pages/EngineerApp';
 import Sites from './pages/Sites';
 import Assets from './pages/Assets';
+import Quotes from './pages/Quotes';
+import Invoices from './pages/Invoices';
 import Layout from './Layout.jsx';
 
 
@@ -14,6 +16,8 @@ export const PAGES = {
     "EngineerApp": EngineerApp,
     "Sites": Sites,
     "Assets": Assets,
+    "Quotes": Quotes,
+    "Invoices": Invoices,
 }
 
 export const pagesConfig = {
