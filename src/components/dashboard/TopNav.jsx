@@ -18,70 +18,75 @@ export default function TopNav({ user }) {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-divider h-16 px-6 flex items-center justify-between">
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-white" strokeWidth={1.5} />
-          </div>
-          <span className="text-lg font-bold text-white">EntireCAFM</span>
-        </div>
-
-        <div className="h-8 w-px bg-divider" />
-
+    <div className="h-14 px-6 flex items-center justify-between bg-[#0D1117] border-b border-[rgba(255,255,255,0.08)]">
+      {/* Center - Organization Selector */}
+      <div className="flex-1 flex justify-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="text-body hover:text-white hover:bg-white/10">
+            <Button 
+              variant="outline" 
+              className="border-[rgba(255,255,255,0.08)] bg-transparent text-[#CED4DA] hover:bg-[rgba(255,255,255,0.04)] rounded-lg px-4"
+            >
               {selectedOrg}
               <ChevronDown className="ml-2 h-4 w-4" strokeWidth={1.5} />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="glass-panel-strong border-divider">
-            <DropdownMenuItem className="text-white" onClick={() => setSelectedOrg("EntireCAFM Operations")}>
+          <DropdownMenuContent className="bg-[#0D1117] border-[rgba(255,255,255,0.08)]">
+            <DropdownMenuItem 
+              className="text-[#CED4DA] focus:bg-[rgba(255,255,255,0.08)] focus:text-white" 
+              onClick={() => setSelectedOrg("EntireCAFM Operations")}
+            >
               EntireCAFM Operations
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-white" onClick={() => setSelectedOrg("Acme Facilities Ltd")}>
+            <DropdownMenuItem 
+              className="text-[#CED4DA] focus:bg-[rgba(255,255,255,0.08)] focus:text-white" 
+              onClick={() => setSelectedOrg("Acme Facilities Ltd")}
+            >
               Acme Facilities Ltd
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-white" onClick={() => setSelectedOrg("BuildSafe UK")}>
+            <DropdownMenuItem 
+              className="text-[#CED4DA] focus:bg-[rgba(255,255,255,0.08)] focus:text-white" 
+              onClick={() => setSelectedOrg("BuildSafe UK")}
+            >
               BuildSafe UK
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
+      {/* Right - User Profile */}
       {user && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-3 text-body hover:text-white hover:bg-white/10">
-              <div className="w-8 h-8 rounded-full accent-magenta flex items-center justify-center text-white font-bold text-sm">
-                {user.full_name?.[0] || 'U'}
+        <div className="flex items-center gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <div className="w-8 h-8 rounded-full bg-[#E1467C] flex items-center justify-center text-white font-semibold text-sm">
+                  {user.full_name?.[0] || 'U'}
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-[#0D1117] border-[rgba(255,255,255,0.08)] w-56">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium text-white">{user.full_name}</p>
+                <p className="text-xs text-[#CED4DA] truncate">{user.email}</p>
               </div>
-              <span className="text-sm">User: {user.full_name?.split(' ')[0]}</span>
-              <ChevronDown className="h-4 w-4" strokeWidth={1.5} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="glass-panel-strong border-divider w-56">
-            <div className="px-2 py-1.5">
-              <p className="text-sm font-medium text-white">{user.full_name}</p>
-              <p className="text-xs text-body truncate">{user.email}</p>
-            </div>
-            <DropdownMenuSeparator className="bg-divider" />
-            <DropdownMenuItem className="text-white">
-              <User className="mr-2 h-4 w-4" strokeWidth={1.5} />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-white">
-              <Settings className="mr-2 h-4 w-4" strokeWidth={1.5} />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-divider" />
-            <DropdownMenuItem onClick={handleLogout} className="text-white">
-              <LogOut className="mr-2 h-4 w-4" strokeWidth={1.5} />
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.08)]" />
+              <DropdownMenuItem className="text-[#CED4DA] focus:bg-[rgba(255,255,255,0.08)] focus:text-white">
+                <User className="mr-2 h-4 w-4" strokeWidth={1.5} />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-[#CED4DA] focus:bg-[rgba(255,255,255,0.08)] focus:text-white">
+                <Settings className="mr-2 h-4 w-4" strokeWidth={1.5} />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.08)]" />
+              <DropdownMenuItem onClick={handleLogout} className="text-[#CED4DA] focus:bg-[rgba(255,255,255,0.08)] focus:text-white">
+                <LogOut className="mr-2 h-4 w-4" strokeWidth={1.5} />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )}
     </div>
   );

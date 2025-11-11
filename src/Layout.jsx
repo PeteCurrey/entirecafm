@@ -107,85 +107,74 @@ export default function Layout({ children, currentPageName }) {
         
         .glass-panel {
           background: rgba(255, 255, 255, 0.04);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
           border: 1px solid rgba(255, 255, 255, 0.08);
         }
         
         .glass-panel-strong {
           background: rgba(255, 255, 255, 0.06);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .text-body {
-          color: #CED4DA;
-        }
-
-        .accent-magenta {
-          background: #E1467C;
-          color: white;
-        }
-
-        .accent-magenta:hover {
-          background: #C93968;
-        }
-
-        .border-divider {
-          border-color: rgba(255, 255, 255, 0.08);
-        }
-
-        .nav-hover {
+        .sidebar-nav-item {
+          position: relative;
+          padding: 10px 16px;
+          margin-bottom: 2px;
+          border-radius: 8px;
           transition: all 0.2s ease;
+          border-left: 3px solid transparent;
         }
 
-        .nav-hover:hover {
+        .sidebar-nav-item:hover {
           background: rgba(255, 255, 255, 0.08);
         }
 
+        .sidebar-nav-item.active {
+          border-left-color: #E1467C;
+          background: rgba(255, 255, 255, 0.06);
+        }
+
         .section-label {
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 600;
-          letter-spacing: 0.1em;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
           color: rgba(206, 212, 218, 0.5);
           margin-bottom: 8px;
-          margin-top: 20px;
+          margin-top: 24px;
+          padding-left: 16px;
         }
       `}</style>
 
       <div className="flex h-screen">
         {/* Sidebar - Desktop */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-72 p-6 border-r border-divider overflow-y-auto bg-[#0D1117]">
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl glass-panel flex items-center justify-center">
-                <Wrench className="w-6 h-6 text-white" />
+        <aside className="hidden lg:flex lg:flex-col lg:w-60 glass-panel border-r border-[rgba(255,255,255,0.08)] overflow-y-auto">
+          <div className="p-6 border-b border-[rgba(255,255,255,0.08)]">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+                <Wrench className="w-5 h-5 text-white" strokeWidth={1.5} />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">EntireCAFM</h1>
-                <p className="text-xs text-body">Facilities Management</p>
-              </div>
+              <span className="text-sm font-semibold text-[#CED4DA] tracking-wide">ENTIRECAFM</span>
             </div>
           </div>
 
-          <nav className="flex-1 space-y-1">
+          <nav className="flex-1 py-4">
             {filteredSections.map((section, sectionIndex) => (
               <div key={section.title}>
-                {sectionIndex > 0 && <div className="section-label">{section.title}</div>}
+                <div className="section-label">{section.title}</div>
                 {section.items.map((item) => {
                   const isActive = location.pathname === item.url;
                   return (
                     <Link
                       key={item.title}
                       to={item.url}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl nav-hover text-sm transition-all ${
-                        isActive ? 'glass-panel-strong' : ''
-                      }`}
+                      className={`sidebar-nav-item flex items-center gap-3 ${isActive ? 'active' : ''}`}
                     >
-                      <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-body'}`} strokeWidth={1.5} />
-                      <span className={`font-medium ${isActive ? 'text-white' : 'text-body'}`}>
+                      <item.icon className="w-4 h-4 text-[#CED4DA]" strokeWidth={1.5} />
+                      <span className="text-sm text-[#CED4DA]">
                         {item.title}
                       </span>
                     </Link>
@@ -194,49 +183,14 @@ export default function Layout({ children, currentPageName }) {
               </div>
             ))}
           </nav>
-
-          {user && (
-            <div className="mt-6 pt-6 border-t border-divider">
-              <div className="glass-panel rounded-xl p-4 mb-3">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full accent-magenta flex items-center justify-center text-white font-bold">
-                    {user.full_name?.[0] || 'U'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{user.full_name}</p>
-                    <p className="text-xs text-body truncate">{user.email}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-1 text-body hover:text-white hover:bg-white/10"
-                  >
-                    <Settings className="w-4 h-4" strokeWidth={1.5} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="flex-1 text-body hover:text-white hover:bg-white/10"
-                  >
-                    <LogOut className="w-4 h-4" strokeWidth={1.5} />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </aside>
 
         {/* Mobile Header */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 glass-panel border-b border-divider p-4">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0D1117] border-b border-[rgba(255,255,255,0.08)] p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-white" strokeWidth={1.5} />
-              </div>
-              <span className="text-lg font-bold text-white">EntireCAFM</span>
+              <Wrench className="w-5 h-5 text-white" strokeWidth={1.5} />
+              <span className="text-sm font-semibold text-[#CED4DA]">ENTIRECAFM</span>
             </div>
             <Button
               variant="ghost"
@@ -255,7 +209,7 @@ export default function Layout({ children, currentPageName }) {
             <nav className="p-6 space-y-2">
               {filteredSections.map((section, sectionIndex) => (
                 <div key={section.title}>
-                  {sectionIndex > 0 && <div className="section-label">{section.title}</div>}
+                  <div className="section-label">{section.title}</div>
                   {section.items.map((item) => {
                     const isActive = location.pathname === item.url;
                     return (
@@ -263,12 +217,10 @@ export default function Layout({ children, currentPageName }) {
                         key={item.title}
                         to={item.url}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl nav-hover ${
-                          isActive ? 'glass-panel-strong' : ''
-                        }`}
+                        className={`sidebar-nav-item flex items-center gap-3 ${isActive ? 'active' : ''}`}
                       >
-                        <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-body'}`} strokeWidth={1.5} />
-                        <span className={`font-medium ${isActive ? 'text-white' : 'text-body'}`}>
+                        <item.icon className="w-4 h-4 text-[#CED4DA]" strokeWidth={1.5} />
+                        <span className="text-sm text-[#CED4DA]">
                           {item.title}
                         </span>
                       </Link>

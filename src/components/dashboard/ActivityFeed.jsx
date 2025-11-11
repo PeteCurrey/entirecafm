@@ -6,68 +6,90 @@ export default function ActivityFeed() {
   const activities = [
     {
       id: 1,
-      type: "job_completed",
-      engineer: "Ryan Mitchell",
-      description: "completed Job #3241 (Victoria Gate)",
+      engineer: "Ryan",
+      action: "completed",
+      detail: "Job #3241",
+      location: "Starbucks Victoria",
       timestamp: new Date(Date.now() - 8 * 60 * 1000),
       icon: CheckCircle2,
-      color: "text-green-400"
     },
     {
       id: 2,
-      type: "job_assigned",
-      engineer: "Mia Chen",
-      description: "assigned to Job #3248 (NHS South Wing)",
+      engineer: "Mia",
+      action: "assigned to",
+      detail: "Job #3248",
+      location: "NHS South Wing",
       timestamp: new Date(Date.now() - 12 * 60 * 1000),
       icon: UserPlus,
-      color: "text-blue-400"
     },
     {
       id: 3,
-      type: "quote_approved",
-      client: "Client",
-      description: "approved Quote #1129",
+      type: "client",
+      action: "Client approved",
+      detail: "Quote #1129",
       timestamp: new Date(Date.now() - 18 * 60 * 1000),
       icon: FileText,
-      color: "text-purple-400"
     },
     {
       id: 4,
-      type: "invoice_sent",
-      description: "Invoice #INV-2401 sent to Starbucks",
+      action: "Invoice #INV-2401 sent to",
+      detail: "Starbucks",
       timestamp: new Date(Date.now() - 32 * 60 * 1000),
       icon: DollarSign,
-      color: "text-yellow-400"
     },
     {
       id: 5,
-      type: "job_started",
-      engineer: "James Foster",
-      description: "started Job #3244 (Royal Hospital)",
+      engineer: "James",
+      action: "started",
+      detail: "Job #3244",
+      location: "Royal Hospital",
       timestamp: new Date(Date.now() - 45 * 60 * 1000),
       icon: Clock,
-      color: "text-orange-400"
     },
   ];
 
+  const formatActivityText = (activity) => {
+    if (activity.engineer) {
+      return (
+        <>
+          <span className="text-white font-medium">{activity.engineer}</span>
+          <span className="text-[#CED4DA]"> {activity.action} </span>
+          <span className="text-white font-medium">{activity.detail}</span>
+          {activity.location && (
+            <>
+              <span className="text-[#CED4DA]"> — </span>
+              <span className="text-[#CED4DA]">{activity.location}</span>
+            </>
+          )}
+        </>
+      );
+    }
+    return (
+      <>
+        <span className="text-[#CED4DA]">{activity.action} </span>
+        <span className="text-white font-medium">{activity.detail}</span>
+      </>
+    );
+  };
+
   return (
-    <div className="glass-panel rounded-2xl p-6 border border-divider">
-      <h2 className="text-lg font-bold text-white mb-4">Recent Activity</h2>
+    <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+      <h2 className="text-base font-semibold text-white mb-4">Activity Feed</h2>
       <div className="space-y-3">
         {activities.map((activity) => {
           const Icon = activity.icon;
           return (
-            <div key={activity.id} className="flex items-start gap-3 group">
-              <div className={`w-8 h-8 rounded-lg glass-panel flex items-center justify-center flex-shrink-0 ${activity.color}`}>
-                <Icon className="w-4 h-4" strokeWidth={1.5} />
+            <div key={activity.id} className="flex items-start gap-3 py-2">
+              <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Icon className="w-4 h-4 text-[#CED4DA] opacity-60" strokeWidth={1.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-white">
-                  <span className="font-medium">{activity.engineer || activity.client}</span>{" "}
-                  <span className="text-body">{activity.description}</span>
-                </p>
-                <p className="text-xs text-body mt-0.5">
-                  {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
+                <p className="text-[13px] leading-relaxed">
+                  {formatActivityText(activity)}
+                  <span className="text-[#CED4DA] opacity-50"> — </span>
+                  <span className="text-[#CED4DA] opacity-50 text-[12px]">
+                    {format(activity.timestamp, 'HH:mm')}
+                  </span>
                 </p>
               </div>
             </div>
@@ -76,4 +98,10 @@ export default function ActivityFeed() {
       </div>
     </div>
   );
+}
+
+function format(date, formatStr) {
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
 }
