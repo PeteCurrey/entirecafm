@@ -18,6 +18,12 @@ import Approvals from './pages/Approvals';
 import AIDirector from './pages/AIDirector';
 import AIAccounts from './pages/AIAccounts';
 import AIMarketing from './pages/AIMarketing';
+import ClientPortal from './pages/ClientPortal';
+import ClientJobs from './pages/ClientJobs';
+import ClientJobDetail from './pages/ClientJobDetail';
+import ClientQuotes from './pages/ClientQuotes';
+import ClientInvoices from './pages/ClientInvoices';
+import ClientRequestJob from './pages/ClientRequestJob';
 import Layout from './Layout.jsx';
 
 
@@ -42,6 +48,12 @@ export const PAGES = {
     "AIDirector": AIDirector,
     "AIAccounts": AIAccounts,
     "AIMarketing": AIMarketing,
+    "ClientPortal": ClientPortal,
+    "ClientJobs": ClientJobs,
+    "ClientJobDetail": ClientJobDetail,
+    "ClientQuotes": ClientQuotes,
+    "ClientInvoices": ClientInvoices,
+    "ClientRequestJob": ClientRequestJob,
 }
 
 export const pagesConfig = {
