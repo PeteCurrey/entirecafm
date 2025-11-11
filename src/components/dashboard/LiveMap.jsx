@@ -24,6 +24,7 @@ const createEngineerIcon = (initials, status) => {
         font-weight: 600;
         font-size: 12px;
         box-shadow: 0 4px 12px rgba(225, 70, 124, 0.3);
+        transition: all 0.3s ease;
       ">${initials}</div>
     `,
     iconSize: [40, 40],
@@ -31,30 +32,48 @@ const createEngineerIcon = (initials, status) => {
   });
 };
 
-// Custom icon for jobs (white line icons with status colors)
-const createJobIcon = (status) => {
+// Custom icon for jobs (diamond shape with status colors)
+const createJobIcon = (status, isAtRisk = false) => {
   const colors = {
-    raised: '#60A5FA',
-    assigned: '#A78BFA',
-    en_route: '#FBBF24',
-    on_site: '#FB923C',
+    raised: '#6B7280',      // grey for New
+    assigned: '#3B82F6',    // blue for Assigned
+    en_route: '#14B8A6',    // teal for En Route
+    on_site: '#EAB308',     // yellow for On Site
   };
-  const color = colors[status] || '#60A5FA';
+  const color = colors[status] || '#6B7280';
+  
+  const pulseAnimation = isAtRisk ? `
+    animation: subtlePulse 2s ease-in-out infinite;
+    border-color: #E1467C !important;
+  ` : '';
   
   return L.divIcon({
-    className: 'custom-marker',
+    className: 'custom-marker job-marker',
     html: `
+      <style>
+        @keyframes subtlePulse {
+          0%, 100% { 
+            transform: rotate(45deg) scale(1);
+            opacity: 1;
+          }
+          50% { 
+            transform: rotate(45deg) scale(1.1);
+            opacity: 0.9;
+          }
+        }
+      </style>
       <div style="
-        width: 24px;
-        height: 24px;
+        width: 16px;
+        height: 16px;
         background: ${color};
         border: 2px solid rgba(255, 255, 255, 0.6);
-        border-radius: 4px;
+        transform: rotate(45deg);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        ${pulseAnimation}
       "></div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
   });
 };
 
@@ -92,12 +111,13 @@ export default function LiveMap({ compact = false }) {
   ];
 
   const jobLocations = [
-    { id: 1, lat: 51.5090, lng: -0.1280, status: "raised", title: "Boiler Service" },
-    { id: 2, lat: 51.5180, lng: -0.1400, status: "assigned", title: "HVAC Inspection" },
+    { id: 1, lat: 51.5090, lng: -0.1280, status: "raised", title: "Boiler Service", atRisk: false },
+    { id: 2, lat: 51.5180, lng: -0.1400, status: "assigned", title: "HVAC Inspection", atRisk: false },
+    { id: 3, lat: 51.5050, lng: -0.1100, status: "on_site", title: "Emergency Repair", atRisk: true },
   ];
 
   return (
-    <div className={`relative ${compact ? 'h-full' : 'h-full'} rounded-2xl overflow-hidden`}>
+    <div className={`relative h-full rounded-2xl overflow-hidden`}>
       <style>{`
         .leaflet-container {
           background: #0D1117;
@@ -177,12 +197,17 @@ export default function LiveMap({ compact = false }) {
           <Marker 
             key={job.id}
             position={[job.lat, job.lng]}
-            icon={createJobIcon(job.status)}
+            icon={createJobIcon(job.status, job.atRisk)}
           >
             <Popup>
               <div className="text-sm p-2">
                 <p className="font-semibold text-white mb-1">{job.title}</p>
-                <p className="text-xs text-[#CED4DA] capitalize">Status: {job.status}</p>
+                <p className="text-xs text-[#CED4DA] capitalize mb-1">
+                  Status: {job.status.replace('_', ' ')}
+                </p>
+                {job.atRisk && (
+                  <p className="text-xs text-[#E1467C] font-medium">⚠ SLA At Risk</p>
+                )}
               </div>
             </Popup>
           </Marker>

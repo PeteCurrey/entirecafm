@@ -135,6 +135,7 @@ export default function Layout({ children, currentPageName }) {
         .sidebar-nav-item.active {
           border-left-color: #E1467C;
           background: rgba(255, 255, 255, 0.06);
+          font-weight: 600;
         }
 
         .section-label {
@@ -157,7 +158,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="w-8 h-8 rounded-lg flex items-center justify-center">
                 <Wrench className="w-5 h-5 text-white" strokeWidth={1.5} />
               </div>
-              <span className="text-sm font-semibold text-[#CED4DA] tracking-wide">ENTIRECAFM</span>
+              <span className="text-sm font-semibold text-white tracking-wide">ENTIRECAFM</span>
             </div>
           </div>
 
@@ -190,7 +191,7 @@ export default function Layout({ children, currentPageName }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Wrench className="w-5 h-5 text-white" strokeWidth={1.5} />
-              <span className="text-sm font-semibold text-[#CED4DA]">ENTIRECAFM</span>
+              <span className="text-sm font-semibold text-white">ENTIRECAFM</span>
             </div>
             <Button
               variant="ghost"
