@@ -64,71 +64,70 @@ export default function Layout({ children, currentPageName }) {
   );
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden bg-[#0D1117]">
       <style>{`
-        :root {
-          --glass-bg: rgba(255, 255, 255, 0.08);
-          --glass-border: rgba(255, 255, 255, 0.18);
-          --glass-shadow: rgba(0, 0, 0, 0.1);
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+        
+        * {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
-        .glass-effect {
-          background: rgba(255, 255, 255, 0.08);
+        h1, h2, h3, h4, h5, h6 {
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 600;
+        }
+        
+        .glass-panel {
+          background: rgba(255, 255, 255, 0.04);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.18);
-          box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.08);
         }
         
-        .glass-effect-strong {
-          background: rgba(255, 255, 255, 0.12);
+        .glass-panel-strong {
+          background: rgba(255, 255, 255, 0.06);
           backdrop-filter: blur(24px);
           -webkit-backdrop-filter: blur(24px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .gradient-bg {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-          background-size: 200% 200%;
-          animation: gradientShift 15s ease infinite;
+        .text-body {
+          color: #CED4DA;
         }
 
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+        .accent-magenta {
+          background: #E1467C;
+          color: white;
         }
 
-        .glass-hover {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .accent-magenta:hover {
+          background: #C93968;
         }
 
-        .glass-hover:hover {
-          background: rgba(255, 255, 255, 0.15);
-          transform: translateY(-2px);
-          box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25);
+        .border-divider {
+          border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-hover {
+          transition: all 0.2s ease;
+        }
+
+        .nav-hover:hover {
+          background: rgba(255, 255, 255, 0.08);
         }
       `}</style>
 
-      {/* Gradient Background */}
-      <div className="fixed inset-0 gradient-bg -z-10" />
-
-      {/* Floating orbs for depth */}
-      <div className="fixed top-20 right-20 w-96 h-96 bg-purple-400 rounded-full opacity-20 blur-3xl -z-10 animate-pulse" />
-      <div className="fixed bottom-20 left-20 w-96 h-96 bg-blue-400 rounded-full opacity-20 blur-3xl -z-10 animate-pulse" style={{ animationDelay: '1s' }} />
-
       <div className="flex h-screen">
         {/* Sidebar - Desktop */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-72 p-6 glass-effect border-r border-white/20 overflow-y-auto">
+        <aside className="hidden lg:flex lg:flex-col lg:w-72 p-6 border-r border-divider overflow-y-auto bg-[#0D1117]">
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl glass-effect-strong flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl glass-panel flex items-center justify-center">
                 <Wrench className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-white">EntireCAFM</h1>
-                <p className="text-xs text-white/70">Facilities Management</p>
+                <p className="text-xs text-body">Facilities Management</p>
               </div>
             </div>
           </div>
@@ -140,12 +139,12 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   key={item.title}
                   to={item.url}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl glass-hover text-sm ${
-                    isActive ? 'glass-effect-strong' : ''
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl nav-hover text-sm transition-all ${
+                    isActive ? 'glass-panel-strong' : ''
                   }`}
                 >
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-white/70'}`} />
-                  <span className={`font-medium ${isActive ? 'text-white' : 'text-white/70'}`}>
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-body'}`} strokeWidth={1.5} />
+                  <span className={`font-medium ${isActive ? 'text-white' : 'text-body'}`}>
                     {item.title}
                   </span>
                 </Link>
@@ -154,32 +153,32 @@ export default function Layout({ children, currentPageName }) {
           </nav>
 
           {user && (
-            <div className="mt-6 pt-6 border-t border-white/20">
-              <div className="glass-effect-strong rounded-xl p-4 mb-3">
+            <div className="mt-6 pt-6 border-t border-divider">
+              <div className="glass-panel rounded-xl p-4 mb-3">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white font-bold">
+                  <div className="w-10 h-10 rounded-full accent-magenta flex items-center justify-center text-white font-bold">
                     {user.full_name?.[0] || 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">{user.full_name}</p>
-                    <p className="text-xs text-white/60 truncate">{user.email}</p>
+                    <p className="text-xs text-body truncate">{user.email}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="flex-1 text-white/80 hover:text-white hover:bg-white/10"
+                    className="flex-1 text-body hover:text-white hover:bg-white/10"
                   >
-                    <Settings className="w-4 h-4" />
+                    <Settings className="w-4 h-4" strokeWidth={1.5} />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleLogout}
-                    className="flex-1 text-white/80 hover:text-white hover:bg-white/10"
+                    className="flex-1 text-body hover:text-white hover:bg-white/10"
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="w-4 h-4" strokeWidth={1.5} />
                   </Button>
                 </div>
               </div>
@@ -188,11 +187,11 @@ export default function Layout({ children, currentPageName }) {
         </aside>
 
         {/* Mobile Header */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 glass-effect border-b border-white/20 p-4">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 glass-panel border-b border-divider p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg glass-effect-strong flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center">
+                <Wrench className="w-5 h-5 text-white" strokeWidth={1.5} />
               </div>
               <span className="text-lg font-bold text-white">EntireCAFM</span>
             </div>
@@ -209,7 +208,7 @@ export default function Layout({ children, currentPageName }) {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-40 glass-effect-strong pt-20 overflow-y-auto">
+          <div className="lg:hidden fixed inset-0 z-40 glass-panel-strong pt-20 overflow-y-auto">
             <nav className="p-6 space-y-2">
               {filteredNav.map((item) => {
                 const isActive = location.pathname === item.url;
@@ -218,12 +217,12 @@ export default function Layout({ children, currentPageName }) {
                     key={item.title}
                     to={item.url}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl glass-hover ${
-                      isActive ? 'glass-effect-strong' : ''
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl nav-hover ${
+                      isActive ? 'glass-panel-strong' : ''
                     }`}
                   >
-                    <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-white/70'}`} />
-                    <span className={`font-medium ${isActive ? 'text-white' : 'text-white/70'}`}>
+                    <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-body'}`} strokeWidth={1.5} />
+                    <span className={`font-medium ${isActive ? 'text-white' : 'text-body'}`}>
                       {item.title}
                     </span>
                   </Link>

@@ -12,7 +12,8 @@ import {
   DollarSign,
   TrendingUp,
   Users,
-  ArrowRight
+  ArrowRight,
+  ChevronRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,114 +51,148 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Invoice.list('-created_date', 20),
   });
 
+  const { data: ppmSchedules = [] } = useQuery({
+    queryKey: ['ppm-schedules'],
+    queryFn: () => base44.entities.PPMSchedule.list('-next_due_date', 10),
+  });
+
   // Stats calculations
   const activeJobs = jobs.filter(j => !['completed', 'cancelled'].includes(j.status)).length;
-  const completedThisMonth = jobs.filter(j => {
-    if (!j.completed_date) return false;
-    const completed = new Date(j.completed_date);
-    const now = new Date();
-    return completed.getMonth() === now.getMonth() && completed.getFullYear() === now.getFullYear();
+  const slaAtRisk = jobs.filter(j => {
+    if (!j.sla_due_date || ['completed', 'cancelled'].includes(j.status)) return false;
+    return new Date(j.sla_due_date) < new Date();
+  }).length;
+  
+  const ppmThisWeek = ppmSchedules.filter(s => {
+    if (!s.next_due_date) return false;
+    const dueDate = new Date(s.next_due_date);
+    const today = new Date();
+    const weekFromNow = new Date();
+    weekFromNow.setDate(today.getDate() + 7);
+    return dueDate >= today && dueDate <= weekFromNow;
   }).length;
 
-  const pendingQuotes = quotes.filter(q => q.status === 'sent').length;
-  const overdueInvoices = invoices.filter(i => {
-    if (i.status === 'paid') return false;
-    if (!i.due_date) return false;
-    return new Date(i.due_date) < new Date();
+  const overdueJobs = jobs.filter(j => {
+    if (!j.scheduled_date || ['completed', 'cancelled'].includes(j.status)) return false;
+    return new Date(j.scheduled_date) < new Date();
   }).length;
 
   const recentJobs = jobs.slice(0, 5);
 
   const statusColors = {
-    raised: 'bg-blue-500/20 text-blue-200 border-blue-300/30',
-    assigned: 'bg-purple-500/20 text-purple-200 border-purple-300/30',
-    en_route: 'bg-yellow-500/20 text-yellow-200 border-yellow-300/30',
-    on_site: 'bg-orange-500/20 text-orange-200 border-orange-300/30',
-    completed: 'bg-green-500/20 text-green-200 border-green-300/30',
-    cancelled: 'bg-red-500/20 text-red-200 border-red-300/30',
+    raised: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+    assigned: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+    en_route: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+    on_site: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
+    completed: 'bg-green-500/10 text-green-400 border-green-500/30',
+    cancelled: 'bg-red-500/10 text-red-400 border-red-500/30',
   };
 
   const priorityColors = {
-    low: 'bg-gray-500/20 text-gray-200 border-gray-300/30',
-    medium: 'bg-blue-500/20 text-blue-200 border-blue-300/30',
-    high: 'bg-orange-500/20 text-orange-200 border-orange-300/30',
-    critical: 'bg-red-500/20 text-red-200 border-red-300/30',
+    low: 'bg-gray-500/10 text-gray-400 border-gray-500/30',
+    medium: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+    high: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
+    critical: 'bg-[#E1467C]/10 text-[#E1467C] border-[#E1467C]/30',
   };
+
+  // Job workflow funnel data
+  const workflowStages = [
+    { label: 'New', count: jobs.filter(j => j.status === 'raised').length },
+    { label: 'Assigned', count: jobs.filter(j => j.status === 'assigned').length },
+    { label: 'En Route', count: jobs.filter(j => j.status === 'en_route').length },
+    { label: 'On Site', count: jobs.filter(j => j.status === 'on_site').length },
+    { label: 'Complete', count: jobs.filter(j => j.status === 'completed').length },
+  ];
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
       {/* Header */}
-      <div className="glass-effect rounded-2xl p-6 border border-white/20">
+      <div className="glass-panel rounded-2xl p-6 border border-divider">
         <h1 className="text-3xl font-bold text-white mb-2">
           Welcome back, {user?.full_name || 'User'}
         </h1>
-        <p className="text-white/70">Here's what's happening with your operations today</p>
+        <p className="text-body">Here's your operational overview for today</p>
       </div>
 
-      {/* Stats Grid */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Active Jobs */}
-        <div className="glass-effect rounded-2xl p-6 border border-white/20 glass-hover cursor-pointer">
+        <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer">
           <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl glass-effect-strong flex items-center justify-center">
-              <Wrench className="w-6 h-6 text-blue-300" />
+            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
+              <Wrench className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
             </div>
-            <TrendingUp className="w-5 h-5 text-green-400" />
           </div>
           <h3 className="text-3xl font-bold text-white mb-1">{activeJobs}</h3>
-          <p className="text-sm text-white/70">Active Jobs</p>
+          <p className="text-sm text-body">Open Jobs</p>
         </div>
 
-        {/* Completed This Month */}
-        <div className="glass-effect rounded-2xl p-6 border border-white/20 glass-hover cursor-pointer">
+        <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer">
           <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl glass-effect-strong flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-green-300" />
+            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-[#E1467C]" strokeWidth={1.5} />
             </div>
           </div>
-          <h3 className="text-3xl font-bold text-white mb-1">{completedThisMonth}</h3>
-          <p className="text-sm text-white/70">Completed This Month</p>
+          <h3 className="text-3xl font-bold text-white mb-1">{slaAtRisk}</h3>
+          <p className="text-sm text-body">SLA At Risk</p>
         </div>
 
-        {/* Pending Quotes */}
-        <div className="glass-effect rounded-2xl p-6 border border-white/20 glass-hover cursor-pointer">
+        <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer">
           <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl glass-effect-strong flex items-center justify-center">
-              <Clock className="w-6 h-6 text-yellow-300" />
+            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-purple-400" strokeWidth={1.5} />
             </div>
           </div>
-          <h3 className="text-3xl font-bold text-white mb-1">{pendingQuotes}</h3>
-          <p className="text-sm text-white/70">Pending Quotes</p>
+          <h3 className="text-3xl font-bold text-white mb-1">{ppmThisWeek}</h3>
+          <p className="text-sm text-body">PPM This Week</p>
         </div>
 
-        {/* Overdue Invoices */}
-        <div className="glass-effect rounded-2xl p-6 border border-white/20 glass-hover cursor-pointer">
+        <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all cursor-pointer">
           <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl glass-effect-strong flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-red-300" />
+            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
+              <Clock className="w-6 h-6 text-orange-400" strokeWidth={1.5} />
             </div>
           </div>
-          <h3 className="text-3xl font-bold text-white mb-1">{overdueInvoices}</h3>
-          <p className="text-sm text-white/70">Overdue Invoices</p>
+          <h3 className="text-3xl font-bold text-white mb-1">{overdueJobs}</h3>
+          <p className="text-sm text-body">Overdue</p>
+        </div>
+      </div>
+
+      {/* Job Workflow Funnel */}
+      <div className="glass-panel rounded-2xl p-6 border border-divider">
+        <h2 className="text-xl font-bold text-white mb-6">Job Workflow</h2>
+        <div className="flex items-center justify-between gap-3">
+          {workflowStages.map((stage, index) => (
+            <React.Fragment key={stage.label}>
+              <div className="flex-1 text-center">
+                <div className="glass-panel rounded-xl p-4 mb-2">
+                  <p className="text-2xl font-bold text-white mb-1">{stage.count}</p>
+                  <p className="text-xs text-body uppercase tracking-wider">{stage.label}</p>
+                </div>
+              </div>
+              {index < workflowStages.length - 1 && (
+                <ChevronRight className="w-5 h-5 text-body/50 flex-shrink-0" strokeWidth={1.5} />
+              )}
+            </React.Fragment>
+          ))}
         </div>
       </div>
 
       {/* Recent Jobs */}
-      <div className="glass-effect rounded-2xl p-6 border border-white/20">
+      <div className="glass-panel rounded-2xl p-6 border border-divider">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white">Recent Jobs</h2>
+          <h2 className="text-xl font-bold text-white">Recent Activity</h2>
           <Link to={createPageUrl("Jobs")}>
-            <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
+            <Button variant="ghost" className="text-body hover:text-white hover:bg-white/10">
               View All
-              <ArrowRight className="w-4 h-4 ml-2" />
+              <ArrowRight className="w-4 h-4 ml-2" strokeWidth={1.5} />
             </Button>
           </Link>
         </div>
 
         <div className="space-y-3">
           {recentJobs.length === 0 ? (
-            <div className="text-center py-12 text-white/60">
-              <Wrench className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <div className="text-center py-12 text-body">
+              <Wrench className="w-12 h-12 mx-auto mb-3 opacity-50" strokeWidth={1.5} />
               <p>No jobs yet. Create your first job to get started!</p>
             </div>
           ) : (
@@ -167,11 +202,11 @@ export default function Dashboard() {
                 to={createPageUrl("JobDetail") + `?id=${job.id}`}
                 className="block"
               >
-                <div className="glass-effect rounded-xl p-4 border border-white/20 glass-hover">
+                <div className="glass-panel rounded-xl p-4 border border-divider hover:glass-panel-strong transition-all">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <h3 className="font-semibold text-white mb-1">{job.title}</h3>
-                      <p className="text-sm text-white/60 line-clamp-1">{job.description}</p>
+                      <p className="text-sm text-body line-clamp-1">{job.description}</p>
                     </div>
                     <Badge className={`ml-4 ${priorityColors[job.priority]} border`}>
                       {job.priority}
@@ -182,11 +217,11 @@ export default function Dashboard() {
                       {job.status.replace('_', ' ')}
                     </Badge>
                     {job.job_type && (
-                      <span className="text-xs text-white/60">{job.job_type.toUpperCase()}</span>
+                      <span className="text-xs text-body uppercase tracking-wider">{job.job_type}</span>
                     )}
                     {job.scheduled_date && (
-                      <span className="text-xs text-white/60 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
+                      <span className="text-xs text-body flex items-center gap-1">
+                        <Calendar className="w-3 h-3" strokeWidth={1.5} />
                         {format(new Date(job.scheduled_date), 'MMM d, yyyy')}
                       </span>
                     )}
@@ -201,32 +236,32 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Link to={createPageUrl("Jobs") + "?new=true"} className="block">
-          <div className="glass-effect rounded-2xl p-6 border border-white/20 glass-hover h-full">
-            <div className="w-12 h-12 rounded-xl glass-effect-strong flex items-center justify-center mb-4">
-              <Wrench className="w-6 h-6 text-blue-300" />
+          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all h-full">
+            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center mb-4">
+              <Wrench className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">Create New Job</h3>
-            <p className="text-sm text-white/60">Log a reactive or emergency job</p>
+            <p className="text-sm text-body">Log a reactive or emergency job</p>
           </div>
         </Link>
 
-        <Link to={createPageUrl("PPMSchedule")} className="block">
-          <div className="glass-effect rounded-2xl p-6 border border-white/20 glass-hover h-full">
-            <div className="w-12 h-12 rounded-xl glass-effect-strong flex items-center justify-center mb-4">
-              <Calendar className="w-6 h-6 text-purple-300" />
+        <Link to={createPageUrl("PPMPlanner")} className="block">
+          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all h-full">
+            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center mb-4">
+              <Calendar className="w-6 h-6 text-purple-400" strokeWidth={1.5} />
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">View PPM Schedule</h3>
-            <p className="text-sm text-white/60">Manage planned maintenance</p>
+            <p className="text-sm text-body">Manage planned maintenance</p>
           </div>
         </Link>
 
         <Link to={createPageUrl("Quotes") + "?new=true"} className="block">
-          <div className="glass-effect rounded-2xl p-6 border border-white/20 glass-hover h-full">
-            <div className="w-12 h-12 rounded-xl glass-effect-strong flex items-center justify-center mb-4">
-              <DollarSign className="w-6 h-6 text-green-300" />
+          <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all h-full">
+            <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center mb-4">
+              <DollarSign className="w-6 h-6 text-green-400" strokeWidth={1.5} />
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">Create Quote</h3>
-            <p className="text-sm text-white/60">Generate a new quote for approval</p>
+            <p className="text-sm text-body">Generate a new quote for approval</p>
           </div>
         </Link>
       </div>
