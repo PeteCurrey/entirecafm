@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { useQuery } from "@tanstack/react-query";
 import {
   TrendingUp,
@@ -15,7 +17,9 @@ import {
   Zap,
   ArrowUp,
   ArrowDown,
-  Minus
+  Minus,
+  ChevronRight,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 let ws = null;
 
 export default function AIDirectorPage() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
@@ -163,6 +168,23 @@ export default function AIDirectorPage() {
     return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', label: 'COLLECTION REQUIRED' };
   };
 
+  // Navigation handlers
+  const handleJobClick = (jobId) => {
+    navigate(`${createPageUrl("JobDetail")}?id=${jobId}&from=director`);
+  };
+
+  const handleClientClick = (clientId) => {
+    navigate(`${createPageUrl("Clients")}?id=${clientId}&from=director`);
+  };
+
+  const handleFinancialsClick = () => {
+    navigate(`${createPageUrl("Invoices")}?filter=overdue&from=director`);
+  };
+
+  const handleUtilisationClick = () => {
+    navigate(`${createPageUrl("Team")}?sort=utilisation&from=director`);
+  };
+
   if (!dashboardData && !isLoadingDashboard) {
     return (
       <div className="p-6 lg:p-8">
@@ -233,7 +255,7 @@ export default function AIDirectorPage() {
       {/* 5 Core Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* 1. ORG HEALTH */}
-        <div className={`glass-panel rounded-2xl p-6 border ${healthColors.border}`}>
+        <div className={`glass-panel rounded-2xl p-6 border ${healthColors.border} transition-all hover:border-[rgba(255,255,255,0.12)]`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className={`w-12 h-12 rounded-xl ${healthColors.bg} flex items-center justify-center`}>
@@ -271,8 +293,13 @@ export default function AIDirectorPage() {
           </div>
         </div>
 
-        {/* 2. SLA RISK */}
-        <div className={`glass-panel rounded-2xl p-6 border ${riskColors.border}`}>
+        {/* 2. SLA RISK - Clickable */}
+        <div 
+          onClick={() => dashboardData?.at_risk_jobs?.length > 0 && handleJobClick(dashboardData.at_risk_jobs[0].id)}
+          className={`glass-panel rounded-2xl p-6 border ${riskColors.border} transition-all hover:border-[rgba(255,255,255,0.15)] ${
+            dashboardData?.at_risk_jobs?.length > 0 ? 'cursor-pointer' : ''
+          }`}
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className={`w-12 h-12 rounded-xl ${riskColors.bg} flex items-center justify-center`}>
@@ -294,7 +321,14 @@ export default function AIDirectorPage() {
           </div>
           <div className="space-y-2">
             {dashboardData?.at_risk_jobs?.slice(0, 3).map((job, idx) => (
-              <div key={idx} className="flex items-center justify-between text-xs">
+              <div 
+                key={idx} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleJobClick(job.id);
+                }}
+                className="flex items-center justify-between text-xs hover:bg-[rgba(255,255,255,0.04)] p-1 rounded transition-all cursor-pointer"
+              >
                 <span className="text-[#CED4DA] truncate flex-1">{job.title}</span>
                 <Badge className={`ml-2 ${job.sla_risk_pct >= 100 ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                   {job.sla_risk_pct}%
@@ -304,8 +338,11 @@ export default function AIDirectorPage() {
           </div>
         </div>
 
-        {/* 3. ENGINEER UTILISATION */}
-        <div className={`glass-panel rounded-2xl p-6 border ${utilisationColors.border}`}>
+        {/* 3. ENGINEER UTILISATION - Clickable */}
+        <div 
+          onClick={handleUtilisationClick}
+          className={`glass-panel rounded-2xl p-6 border ${utilisationColors.border} transition-all hover:border-[rgba(255,255,255,0.15)] cursor-pointer`}
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className={`w-12 h-12 rounded-xl ${utilisationColors.bg} flex items-center justify-center`}>
@@ -327,7 +364,7 @@ export default function AIDirectorPage() {
           </div>
           <div className="space-y-2">
             {dashboardData?.engineers_utilisation?.slice(0, 3).map((eng, idx) => (
-              <div key={idx} className="flex items-center justify-between text-xs">
+              <div key={idx} className="flex items-center justify-between text-xs hover:bg-[rgba(255,255,255,0.04)] p-1 rounded transition-all">
                 <span className="text-[#CED4DA] truncate flex-1">{eng.engineer_name}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-white">{eng.jobs_next_48h} jobs</span>
@@ -342,10 +379,17 @@ export default function AIDirectorPage() {
               </div>
             )) || <p className="text-xs text-[#CED4DA]">No engineer data</p>}
           </div>
+          <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.08)] flex items-center justify-between text-xs text-[#CED4DA]">
+            <span>View all engineers</span>
+            <ChevronRight className="w-4 h-4" />
+          </div>
         </div>
 
-        {/* 4. FINANCIALS */}
-        <div className={`glass-panel rounded-2xl p-6 border ${financialColors.border} lg:col-span-2`}>
+        {/* 4. FINANCIALS - Clickable */}
+        <div 
+          onClick={handleFinancialsClick}
+          className={`glass-panel rounded-2xl p-6 border ${financialColors.border} lg:col-span-2 transition-all hover:border-[rgba(255,255,255,0.15)] cursor-pointer`}
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className={`w-12 h-12 rounded-xl ${financialColors.bg} flex items-center justify-center`}>
@@ -383,10 +427,14 @@ export default function AIDirectorPage() {
               <div className="text-xs text-[#CED4DA]">Quotes ready to invoice</div>
             </div>
           </div>
+          <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.08)] flex items-center justify-between text-xs text-[#CED4DA]">
+            <span>View overdue invoices</span>
+            <ChevronRight className="w-4 h-4" />
+          </div>
         </div>
 
         {/* 5. CLIENT SENTIMENT */}
-        <div className={`glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]`}>
+        <div className={`glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)] transition-all hover:border-[rgba(255,255,255,0.12)]`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className={`w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center`}>
@@ -418,7 +466,11 @@ export default function AIDirectorPage() {
           </div>
           <div className="space-y-2">
             {dashboardData?.client_health?.top_risk_clients?.slice(0, 3).map((client, idx) => (
-              <div key={idx} className="flex items-center justify-between text-xs">
+              <div 
+                key={idx} 
+                onClick={() => handleClientClick(client.client_id)}
+                className="flex items-center justify-between text-xs hover:bg-[rgba(255,255,255,0.04)] p-1 rounded transition-all cursor-pointer"
+              >
                 <span className="text-[#CED4DA] truncate flex-1">{client.client_name}</span>
                 <Badge className={`ml-2 ${
                   client.health_score >= 60 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
@@ -438,7 +490,11 @@ export default function AIDirectorPage() {
           <h3 className="text-lg font-bold text-white mb-4">At-Risk Jobs</h3>
           <div className="space-y-2">
             {dashboardData?.at_risk_jobs?.slice(0, 5).map((job, idx) => (
-              <div key={idx} className="glass-panel rounded-lg p-3 border border-[rgba(255,255,255,0.08)]">
+              <div 
+                key={idx} 
+                onClick={() => handleJobClick(job.id)}
+                className="glass-panel rounded-lg p-3 border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.15)] transition-all cursor-pointer"
+              >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -456,6 +512,10 @@ export default function AIDirectorPage() {
                   } border`}>
                     {job.sla_risk_pct}% RISK
                   </Badge>
+                </div>
+                <div className="flex items-center justify-end text-xs text-[#CED4DA]">
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  View details
                 </div>
               </div>
             )) || <p className="text-[#CED4DA] text-sm">No jobs at risk</p>}

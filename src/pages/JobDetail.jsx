@@ -35,6 +35,7 @@ export default function JobDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const jobId = searchParams.get('id');
+  const fromPage = searchParams.get('from'); // 'director' or undefined
 
   const [completionNotes, setCompletionNotes] = useState("");
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
@@ -75,7 +76,6 @@ export default function JobDetailPage() {
     enabled: !!job?.assigned_engineer_id,
   });
 
-  // Fetch quotes linked to this job
   const { data: quotes = [] } = useQuery({
     queryKey: ['quotes', jobId],
     queryFn: async () => {
@@ -85,7 +85,6 @@ export default function JobDetailPage() {
     enabled: !!jobId && !!job,
   });
 
-  // Fetch voice notes for this job
   const { data: voiceNotes = [] } = useQuery({
     queryKey: ['voice-notes', jobId],
     queryFn: async () => {
@@ -180,14 +179,28 @@ export default function JobDetailPage() {
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(createPageUrl("Jobs"))}
-          className="mb-4 text-[#CED4DA] hover:text-white hover:bg-[rgba(255,255,255,0.04)]"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" strokeWidth={1.5} />
-          Back to Jobs
-        </Button>
+        {/* Back Link - Show if coming from director dashboard */}
+        {fromPage === 'director' && (
+          <Button
+            variant="ghost"
+            onClick={() => navigate(createPageUrl("AIDirector"))}
+            className="mb-4 text-[#CED4DA] hover:text-white hover:bg-[rgba(255,255,255,0.04)]"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Return to AI Director Dashboard
+          </Button>
+        )}
+        
+        {!fromPage && (
+          <Button
+            variant="ghost"
+            onClick={() => navigate(createPageUrl("Jobs"))}
+            className="mb-4 text-[#CED4DA] hover:text-white hover:bg-[rgba(255,255,255,0.04)]"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Back to Jobs
+          </Button>
+        )}
 
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -285,12 +298,10 @@ export default function JobDetailPage() {
               onSuccess={(data) => {
                 console.log('Voice note processed:', data);
                 if (data.quote_id) {
-                  // Optionally navigate to quote or show success message
                   queryClient.invalidateQueries(['quotes', jobId]);
-                  // Potentially refetch job if quote_id is linked to job on backend
                   queryClient.invalidateQueries(['job', jobId]);
                 }
-                queryClient.invalidateQueries(['voice-notes', jobId]); // Always invalidate voice notes
+                queryClient.invalidateQueries(['voice-notes', jobId]);
               }}
             />
           )}

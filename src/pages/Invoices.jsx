@@ -1,14 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import {
-  Plus,
+  DollarSign,
   Search,
   Download,
-  DollarSign,
-  AlertCircle,
-  CheckCircle2,
-  Clock
+  ArrowLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,24 +22,43 @@ import {
 import { format } from "date-fns";
 
 export default function InvoicesPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const filterParam = searchParams.get('filter'); // 'overdue' or undefined
+  const fromPage = searchParams.get('from'); // 'director' or undefined
+  
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(filterParam === 'overdue' ? 'overdue' : 'all');
+
+  // Update filter when URL param changes
+  useEffect(() => {
+    if (filterParam === 'overdue') {
+      setStatusFilter('overdue');
+    }
+  }, [filterParam]);
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ['invoices'],
     queryFn: () => base44.entities.Invoice.list('-created_date'),
   });
 
-  const { data: sites = [] } = useQuery({
-    queryKey: ['sites'],
-    queryFn: () => base44.entities.Site.list(),
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => base44.entities.Client.list(),
   });
 
-  const filteredInvoices = invoices.filter(invoice => {
+  const filteredInvoices = invoices.filter(inv => {
     const matchesSearch = !searchTerm || 
-      invoice.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase());
+      inv.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
+    let matchesStatus = true;
+    if (statusFilter !== "all") {
+      if (statusFilter === "overdue") {
+        matchesStatus = inv.status !== 'paid' && inv.due_date && new Date(inv.due_date) < new Date();
+      } else {
+        matchesStatus = inv.status === statusFilter;
+      }
+    }
     
     return matchesSearch && matchesStatus;
   });
@@ -53,66 +71,60 @@ export default function InvoicesPage() {
     cancelled: 'bg-orange-500/20 text-orange-200 border-orange-300/30',
   };
 
-  const statusIcons = {
-    draft: Clock,
-    sent: Clock,
-    paid: CheckCircle2,
-    overdue: AlertCircle,
-    cancelled: AlertCircle,
+  const getInvoiceStatus = (invoice) => {
+    if (invoice.status === 'paid') return 'paid';
+    if (invoice.status === 'cancelled') return 'cancelled';
+    if (invoice.due_date && new Date(invoice.due_date) < new Date()) return 'overdue';
+    return invoice.status;
   };
-
-  // Calculate stats
-  const totalOutstanding = filteredInvoices
-    .filter(i => ['sent', 'overdue'].includes(i.status))
-    .reduce((sum, i) => sum + (i.total || 0), 0);
-  
-  const totalPaid = filteredInvoices
-    .filter(i => i.status === 'paid')
-    .reduce((sum, i) => sum + (i.total || 0), 0);
-  
-  const overdueCount = filteredInvoices.filter(i => i.status === 'overdue').length;
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="glass-effect rounded-2xl p-6 border border-white/20">
+      <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+        {/* Back Link - Show if coming from director dashboard */}
+        {fromPage === 'director' && (
+          <Button
+            variant="ghost"
+            onClick={() => navigate(createPageUrl("AIDirector"))}
+            className="mb-4 text-[#CED4DA] hover:text-white hover:bg-[rgba(255,255,255,0.04)]"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Return to AI Director Dashboard
+          </Button>
+        )}
+
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Invoices</h1>
-            <p className="text-white/70">Track payments and financial status</p>
+            <p className="text-[#CED4DA]">
+              {filterParam === 'overdue' ? 'Overdue invoices requiring collection' : 'Manage and track client invoices'}
+            </p>
           </div>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="glass-effect border-white/30 text-white hover:bg-white/10"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-            <Button
-              className="glass-effect-strong border-white/30 text-white hover:bg-white/20"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Invoice
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            className="border-[rgba(255,255,255,0.08)] text-[#CED4DA] hover:bg-[rgba(255,255,255,0.04)]"
+          >
+            <Download className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Export
+          </Button>
         </div>
 
         {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/50" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#CED4DA] opacity-50" />
               <Input
                 placeholder="Search invoices..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 glass-effect border-white/20 text-white placeholder:text-white/50"
+                className="pl-10 glass-panel border-[rgba(255,255,255,0.08)] text-white placeholder:text-[#CED4DA]"
               />
             </div>
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="glass-effect border-white/20 text-white">
+            <SelectTrigger className="glass-panel border-[rgba(255,255,255,0.08)] text-white">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -121,125 +133,125 @@ export default function InvoicesPage() {
               <SelectItem value="sent">Sent</SelectItem>
               <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="overdue">Overdue</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="glass-effect rounded-2xl p-4 border border-white/20">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-white/70">Outstanding</span>
-            <DollarSign className="w-5 h-5 text-blue-300" />
+      {filterParam === 'overdue' && (
+        <div className="glass-panel rounded-2xl p-6 border border-red-500/30 bg-red-500/5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white mb-1">Collection Required</h3>
+              <p className="text-[#CED4DA] text-sm">{filteredInvoices.length} overdue invoices</p>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-red-400">
+                £{filteredInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0).toLocaleString()}
+              </div>
+              <div className="text-xs text-[#CED4DA]">Total overdue</div>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-white">
-            £{totalOutstanding.toLocaleString()}
-          </p>
         </div>
-        <div className="glass-effect rounded-2xl p-4 border border-white/20">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-white/70">Paid</span>
-            <CheckCircle2 className="w-5 h-5 text-green-300" />
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
+          <div className="text-sm text-[#CED4DA] mb-1">Total Outstanding</div>
+          <div className="text-3xl font-semibold text-white">
+            £{invoices.filter(i => i.status !== 'paid').reduce((sum, i) => sum + (i.total || 0), 0).toLocaleString()}
           </div>
-          <p className="text-2xl font-bold text-white">
-            £{totalPaid.toLocaleString()}
-          </p>
         </div>
-        <div className="glass-effect rounded-2xl p-4 border border-white/20">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-white/70">Overdue</span>
-            <AlertCircle className="w-5 h-5 text-red-300" />
+        <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
+          <div className="text-sm text-[#CED4DA] mb-1">Overdue</div>
+          <div className="text-3xl font-semibold text-red-400">
+            {invoices.filter(i => getInvoiceStatus(i) === 'overdue').length}
           </div>
-          <p className="text-2xl font-bold text-white">
-            {overdueCount}
-          </p>
         </div>
-        <div className="glass-effect rounded-2xl p-4 border border-white/20">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-white/70">Total Invoices</span>
+        <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
+          <div className="text-sm text-[#CED4DA] mb-1">Paid This Month</div>
+          <div className="text-3xl font-semibold text-green-400">
+            {invoices.filter(i => {
+              if (!i.paid_date) return false;
+              const paidDate = new Date(i.paid_date);
+              const now = new Date();
+              return paidDate.getMonth() === now.getMonth() && paidDate.getFullYear() === now.getFullYear();
+            }).length}
           </div>
-          <p className="text-2xl font-bold text-white">
-            {invoices.length}
-          </p>
+        </div>
+        <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
+          <div className="text-sm text-[#CED4DA] mb-1">Draft</div>
+          <div className="text-3xl font-semibold text-white">
+            {invoices.filter(i => i.status === 'draft').length}
+          </div>
         </div>
       </div>
 
       {/* Invoices List */}
       <div className="space-y-4">
         {isLoading ? (
-          <div className="glass-effect rounded-2xl p-12 border border-white/20 text-center">
-            <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-white/70">Loading invoices...</p>
+          <div className="glass-panel rounded-2xl p-12 border border-[rgba(255,255,255,0.08)] text-center">
+            <div className="w-12 h-12 border-4 border-[rgba(255,255,255,0.3)] border-t-white rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-[#CED4DA]">Loading invoices...</p>
           </div>
         ) : filteredInvoices.length === 0 ? (
-          <div className="glass-effect rounded-2xl p-12 border border-white/20 text-center">
-            <DollarSign className="w-16 h-16 mx-auto mb-4 text-white/30" />
+          <div className="glass-panel rounded-2xl p-12 border border-[rgba(255,255,255,0.08)] text-center">
+            <DollarSign className="w-16 h-16 mx-auto mb-4 text-[#CED4DA] opacity-30" />
             <h3 className="text-xl font-semibold text-white mb-2">No invoices found</h3>
-            <p className="text-white/60">Invoices will appear here</p>
+            <p className="text-[#CED4DA]">
+              {filterParam === 'overdue' ? 'No overdue invoices - excellent!' : 'Invoices will appear here'}
+            </p>
           </div>
         ) : (
           filteredInvoices.map((invoice) => {
-            const StatusIcon = statusIcons[invoice.status];
+            const client = clients.find(c => c.id === invoice.client_id);
+            const status = getInvoiceStatus(invoice);
             
             return (
               <div
                 key={invoice.id}
-                className="glass-effect rounded-2xl p-6 border border-white/20 glass-hover cursor-pointer"
+                className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)] transition-all"
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold text-white">
-                        {invoice.invoice_number || `INV-${invoice.id.slice(0, 8)}`}
+                        Invoice #{invoice.invoice_number || invoice.id.slice(0, 8)}
                       </h3>
-                      <Badge className={`${statusColors[invoice.status]} border flex items-center gap-1`}>
-                        <StatusIcon className="w-3 h-3" />
-                        {invoice.status}
-                      </Badge>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-white/50">Issue Date</span>
-                        <p className="text-white/90">
-                          {format(new Date(invoice.issue_date), 'MMM d, yyyy')}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-white/50">Due Date</span>
-                        <p className="text-white/90">
-                          {format(new Date(invoice.due_date), 'MMM d, yyyy')}
-                        </p>
-                      </div>
-                      {invoice.paid_date && (
-                        <div>
-                          <span className="text-white/50">Paid Date</span>
-                          <p className="text-white/90">
-                            {format(new Date(invoice.paid_date), 'MMM d, yyyy')}
-                          </p>
-                        </div>
-                      )}
-                      {invoice.po_number && (
-                        <div>
-                          <span className="text-white/50">PO Number</span>
-                          <p className="text-white/90">{invoice.po_number}</p>
-                        </div>
-                      )}
-                    </div>
+                    {client && (
+                      <p className="text-[#CED4DA] mb-3">{client.name}</p>
+                    )}
                   </div>
-                  <div className="text-right ml-6">
-                    <p className="text-2xl font-bold text-white">
+                  <div className="flex flex-col items-end gap-2 ml-4">
+                    <span className="text-2xl font-bold text-white">
                       £{(invoice.total || 0).toLocaleString()}
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-white/80 hover:text-white hover:bg-white/10 mt-2"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
+                    </span>
+                    <Badge className={`${statusColors[status]} border`}>
+                      {status}
+                    </Badge>
                   </div>
+                </div>
+
+                <div className="flex flex-wrap gap-4 text-sm text-[#CED4DA]">
+                  {invoice.issue_date && (
+                    <span>Issued: {format(new Date(invoice.issue_date), 'MMM d, yyyy')}</span>
+                  )}
+                  {invoice.due_date && (
+                    <span className={status === 'overdue' ? 'text-red-400 font-semibold' : ''}>
+                      Due: {format(new Date(invoice.due_date), 'MMM d, yyyy')}
+                    </span>
+                  )}
+                  {invoice.paid_date && (
+                    <span className="text-green-400">
+                      Paid: {format(new Date(invoice.paid_date), 'MMM d, yyyy')}
+                    </span>
+                  )}
+                  {invoice.po_number && (
+                    <span>PO: {invoice.po_number}</span>
+                  )}
                 </div>
               </div>
             );
