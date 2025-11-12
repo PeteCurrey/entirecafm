@@ -27,6 +27,7 @@ import ClientRequestJob from './pages/ClientRequestJob';
 import Clients from './pages/Clients';
 import TestRedis from './pages/TestRedis';
 import EngineerSimulator from './pages/EngineerSimulator';
+import ExecutiveBrief from './pages/ExecutiveBrief';
 import Layout from './Layout.jsx';
 
 
@@ -60,6 +61,7 @@ export const PAGES = {
     "Clients": Clients,
     "TestRedis": TestRedis,
     "EngineerSimulator": EngineerSimulator,
+    "ExecutiveBrief": ExecutiveBrief,
 }
 
 export const pagesConfig = {
