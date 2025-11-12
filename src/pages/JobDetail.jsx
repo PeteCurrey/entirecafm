@@ -179,19 +179,25 @@ export default function JobDetailPage() {
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
-        {/* Back Link - Show if coming from director dashboard */}
-        {fromPage === 'director' && (
+        {/* Back Link with scroll restoration */}
+        {fromPage === 'director' ? (
           <Button
             variant="ghost"
-            onClick={() => navigate(createPageUrl("AIDirector"))}
+            onClick={() => {
+              const savedPosition = sessionStorage.getItem('directorScrollPosition');
+              navigate(createPageUrl("AIDirector"));
+              if (savedPosition) {
+                setTimeout(() => {
+                  window.scrollTo(0, parseInt(savedPosition));
+                }, 50); // Small delay to ensure navigation completes before scrolling
+              }
+            }}
             className="mb-4 text-[#CED4DA] hover:text-white hover:bg-[rgba(255,255,255,0.04)]"
           >
             <ArrowLeft className="w-4 h-4 mr-2" strokeWidth={1.5} />
-            Return to AI Director Dashboard
+            AI Director
           </Button>
-        )}
-        
-        {!fromPage && (
+        ) : (
           <Button
             variant="ghost"
             onClick={() => navigate(createPageUrl("Jobs"))}
