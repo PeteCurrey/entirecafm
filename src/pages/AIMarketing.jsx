@@ -12,17 +12,16 @@ import {
   RefreshCw,
   Activity,
   Download,
-  BarChart3,
-  PieChart,
-  Calendar
+  ExternalLink,
+  AlertCircle,
+  CheckCircle,
+  TrendingDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LineChart, Line, BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import NextBestActionsTable from "../components/marketing/NextBestActionsTable";
-import SourcePerformanceTable from "../components/marketing/SourcePerformanceTable";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-// WebSocket for live updates
+// WebSocket
 let ws = null;
 
 export default function AIMarketingPage() {
@@ -88,6 +87,7 @@ export default function AIMarketingPage() {
           
           queryClient.invalidateQueries(['marketing-metrics']);
           queryClient.invalidateQueries(['next-best-actions']);
+          queryClient.invalidateQueries(['lead-sources']);
           setLastUpdated(new Date());
         } catch (error) {
           console.error('WebSocket message parse error:', error);
@@ -120,10 +120,19 @@ export default function AIMarketingPage() {
     queryKey: ['marketing-metrics', user?.org_id],
     queryFn: async () => {
       if (!user?.org_id) return [];
-      const allMetrics = await base44.entities.MarketingMetricsDaily.filter({
-        org_id: user.org_id
+      return base44.entities.MarketingMetricsDaily.filter({ org_id: user.org_id });
+    },
+    enabled: !!user?.org_id,
+  });
+
+  const { data: actions = [] } = useQuery({
+    queryKey: ['next-best-actions', user?.org_id],
+    queryFn: async () => {
+      if (!user?.org_id) return [];
+      return base44.entities.NextBestAction.filter({ 
+        org_id: user.org_id,
+        status: 'pending'
       });
-      return allMetrics.sort((a, b) => a.date.localeCompare(b.date));
     },
     enabled: !!user?.org_id,
   });
@@ -146,25 +155,21 @@ export default function AIMarketingPage() {
     enabled: !!user?.org_id,
   });
 
-  const { data: actions = [] } = useQuery({
-    queryKey: ['next-best-actions', user?.org_id],
-    queryFn: async () => {
-      if (!user?.org_id) return [];
-      return base44.entities.NextBestAction.filter({ 
-        org_id: user.org_id,
-        status: 'pending'
-      });
-    },
-    enabled: !!user?.org_id,
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => base44.entities.Client.list(),
   });
 
+  // Compute metrics
   const computeMetrics = async () => {
     if (!user?.org_id) return;
     
     setIsComputing(true);
     try {
-      await base44.functions.invoke('marketing.computeMetrics');
-      
+      await base44.functions.invoke('marketing.computeMetrics', {
+        org_id: user.org_id
+      });
+
       queryClient.invalidateQueries(['marketing-metrics']);
       queryClient.invalidateQueries(['next-best-actions']);
       
@@ -177,9 +182,7 @@ export default function AIMarketingPage() {
   };
 
   const handleExport = async () => {
-    const response = await base44.functions.invoke('marketing.exportMarketing', {
-      range: '30d'
-    });
+    const response = await base44.functions.invoke('marketing.exportMetrics');
     
     const blob = new Blob([response.data], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -192,68 +195,86 @@ export default function AIMarketingPage() {
     a.remove();
   };
 
+  const dismissActionMutation = useMutation({
+    mutationFn: (actionId) => base44.entities.NextBestAction.update(actionId, { status: 'dismissed' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['next-best-actions']);
+    }
+  });
+
   // Calculate summary metrics (last 30 days)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+  const recentMetrics = metrics
+    .filter(m => new Date(m.date) >= thirtyDaysAgo)
+    .sort((a, b) => a.date.localeCompare(b.date));
 
-  const recentMetrics = metrics.filter(m => m.date >= thirtyDaysAgoStr);
-
-  const avgConversion = recentMetrics.length > 0
-    ? (recentMetrics.reduce((sum, m) => sum + (m.conversion_rate || 0), 0) / recentMetrics.length) * 100
+  const avgConversionRate = recentMetrics.length > 0
+    ? recentMetrics.reduce((sum, m) => sum + (m.conversion_rate || 0), 0) / recentMetrics.length
     : 0;
 
   const totalRevenue = recentMetrics.reduce((sum, m) => sum + (m.revenue_realised || 0), 0);
   const totalSpend = recentMetrics.reduce((sum, m) => sum + (m.spend || 0), 0);
-  const overallROI = totalSpend > 0 ? totalRevenue / totalSpend : 0;
+  const avgROI = totalSpend > 0 ? totalRevenue / totalSpend : 0;
 
-  // Calculate ROI by source
-  const sourceROIs = sources.map(source => {
-    const sourceRevenue = leadEvents
-      .filter(e => e.source_id === source.id && e.event_type === 'INVOICE_PAID')
+  // Top source
+  const topSource = recentMetrics.length > 0
+    ? recentMetrics[recentMetrics.length - 1]?.top_source || 'N/A'
+    : 'N/A';
+
+  // Client reactivation opportunities
+  const reactivationActions = actions.filter(a => a.action_type === 'REACTIVATE_CLIENT');
+
+  // ROI by source (calculate from lead events)
+  const sourceROI = sources.map(source => {
+    const sourceEvents = leadEvents.filter(e => e.source_id === source.id);
+    const revenue = sourceEvents
+      .filter(e => e.event_type === 'INVOICE_PAID')
       .reduce((sum, e) => sum + (e.event_value || 0), 0);
-    
-    const sourceCost = source.cost_per_month || 0;
-    const roi = sourceCost > 0 ? sourceRevenue / sourceCost : 0;
+    const spend = source.cost_per_month || 0;
+    const roi = spend > 0 ? revenue / spend : 0;
 
     return {
       name: source.name,
       roi: Math.round(roi * 100) / 100,
-      revenue: sourceRevenue,
-      spend: sourceCost
+      revenue,
+      spend
     };
   }).sort((a, b) => b.roi - a.roi);
 
-  const topSource = sourceROIs[0];
-
-  // Lead distribution
+  // Lead distribution (pie chart)
   const leadDistribution = sources.map(source => {
     const count = leadEvents.filter(e => 
       e.source_id === source.id && e.event_type === 'ENQUIRY'
     ).length;
-    
     return {
       name: source.name,
       value: count
     };
   }).filter(s => s.value > 0);
 
-  // Conversion trend (last 30 days)
-  const conversionTrend = recentMetrics.map(m => ({
+  // Conversion rate chart (last 30 days)
+  const conversionChartData = recentMetrics.map(m => ({
     date: new Date(m.date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }),
-    'Conversion %': Math.round((m.conversion_rate || 0) * 100)
+    conversion: (m.conversion_rate || 0) * 100
   }));
 
-  // Client reactivation opportunities
-  const reactivationCount = actions.filter(a => a.action_type === 'REACTIVATE_CLIENT').length;
+  const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
-  const COLORS = ['#E1467C', '#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+  const handleActionClick = (action) => {
+    if (action.client_id) {
+      navigate(`${createPageUrl("Clients")}?id=${action.client_id}`);
+    } else if (action.source_id) {
+      // Navigate to sources management (if exists) or show modal
+      console.log('Navigate to source:', action.source_id);
+    }
+  };
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="glass-panel-strong border border-[rgba(255,255,255,0.1)] p-3 rounded-lg">
-          <p className="text-white font-semibold mb-2">{label}</p>
+          <p className="text-white font-semibold mb-1">{label}</p>
           {payload.map((entry, idx) => (
             <p key={idx} className="text-xs text-[#CED4DA]">
               <span style={{ color: entry.color }}>{entry.name}: </span>
@@ -272,7 +293,7 @@ export default function AIMarketingPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">AI Marketing Dashboard</h1>
-          <p className="text-[#CED4DA]">Conversion analytics, ROI tracking, and next-best-action recommendations</p>
+          <p className="text-[#CED4DA]">Conversion analysis, ROI tracking, and next-best-action recommendations</p>
         </div>
         <div className="flex items-center gap-3">
           {wsConnected && (
@@ -309,44 +330,44 @@ export default function AIMarketingPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {/* Conversion Rate */}
         <div className={`glass-panel rounded-2xl p-6 border ${
-          avgConversion >= 40 ? 'border-green-500/30' :
-          avgConversion >= 25 ? 'border-yellow-500/30' :
+          avgConversionRate >= 0.6 ? 'border-green-500/30' :
+          avgConversionRate >= 0.4 ? 'border-yellow-500/30' :
           'border-red-500/30'
         }`}>
           <div className="flex items-center justify-between mb-2">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-              avgConversion >= 40 ? 'bg-green-500/20' :
-              avgConversion >= 25 ? 'bg-yellow-500/20' :
+            <div className={`w-10 h-10 rounded-xl ${
+              avgConversionRate >= 0.6 ? 'bg-green-500/20' :
+              avgConversionRate >= 0.4 ? 'bg-yellow-500/20' :
               'bg-red-500/20'
-            }`}>
+            } flex items-center justify-center`}>
               <Target className={`w-5 h-5 ${
-                avgConversion >= 40 ? 'text-green-400' :
-                avgConversion >= 25 ? 'text-yellow-400' :
+                avgConversionRate >= 0.6 ? 'text-green-400' :
+                avgConversionRate >= 0.4 ? 'text-yellow-400' :
                 'text-red-400'
               }`} strokeWidth={1.5} />
             </div>
           </div>
           <div className="text-sm text-[#CED4DA] mb-1">Conversion Rate</div>
           <div className={`text-3xl font-bold ${
-            avgConversion >= 40 ? 'text-green-400' :
-            avgConversion >= 25 ? 'text-yellow-400' :
+            avgConversionRate >= 0.6 ? 'text-green-400' :
+            avgConversionRate >= 0.4 ? 'text-yellow-400' :
             'text-red-400'
           }`}>
-            {avgConversion.toFixed(1)}%
+            {(avgConversionRate * 100).toFixed(1)}%
           </div>
           <div className="text-xs text-[#CED4DA] mt-1">Last 30 days</div>
         </div>
 
-        {/* Overall ROI */}
+        {/* Average ROI */}
         <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between mb-2">
             <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-blue-400" strokeWidth={1.5} />
             </div>
           </div>
-          <div className="text-sm text-[#CED4DA] mb-1">Overall ROI</div>
+          <div className="text-sm text-[#CED4DA] mb-1">Average ROI</div>
           <div className="text-3xl font-bold text-blue-400">
-            {overallROI.toFixed(1)}x
+            {avgROI.toFixed(1)}x
           </div>
           <div className="text-xs text-[#CED4DA] mt-1">
             £{totalRevenue.toLocaleString()} / £{totalSpend.toLocaleString()}
@@ -361,40 +382,42 @@ export default function AIMarketingPage() {
             </div>
           </div>
           <div className="text-sm text-[#CED4DA] mb-1">Top Source</div>
-          <div className="text-xl font-bold text-purple-400 truncate">
-            {topSource?.name || 'N/A'}
+          <div className="text-xl font-bold text-purple-400">
+            {topSource}
           </div>
           <div className="text-xs text-[#CED4DA] mt-1">
-            {topSource ? `${topSource.roi}x ROI` : 'No data'}
+            {sourceROI.length > 0 ? `${sourceROI[0]?.roi?.toFixed(1)}x ROI` : 'No data'}
           </div>
         </div>
 
         {/* Reactivation Opportunities */}
         <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between mb-2">
-            <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-              <Users className="w-5 h-5 text-green-400" strokeWidth={1.5} />
+            <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
+              <Users className="w-5 h-5 text-orange-400" strokeWidth={1.5} />
             </div>
           </div>
           <div className="text-sm text-[#CED4DA] mb-1">Reactivation Opps</div>
-          <div className="text-3xl font-bold text-green-400">
-            {reactivationCount}
+          <div className="text-3xl font-bold text-orange-400">
+            {reactivationActions.length}
           </div>
           <div className="text-xs text-[#CED4DA] mt-1">Dormant clients</div>
         </div>
 
-        {/* Actions Today */}
+        {/* Next Actions */}
         <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
           <div className="flex items-center justify-between mb-2">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-orange-400" strokeWidth={1.5} />
+            <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-green-400" strokeWidth={1.5} />
             </div>
           </div>
           <div className="text-sm text-[#CED4DA] mb-1">Actions Pending</div>
-          <div className="text-3xl font-bold text-orange-400">
+          <div className="text-3xl font-bold text-green-400">
             {actions.length}
           </div>
-          <div className="text-xs text-[#CED4DA] mt-1">Next best actions</div>
+          <div className="text-xs text-[#CED4DA] mt-1">
+            {actions.filter(a => a.confidence >= 0.8).length} high confidence
+          </div>
         </div>
       </div>
 
@@ -402,13 +425,10 @@ export default function AIMarketingPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Conversion Rate Trend */}
         <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-[#E1467C]" strokeWidth={1.5} />
-            Conversion Rate (30 Days)
-          </h3>
-          {conversionTrend.length > 0 ? (
+          <h3 className="text-lg font-bold text-white mb-4">Conversion Rate (30 Days)</h3>
+          {conversionChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={conversionTrend}>
+              <LineChart data={conversionChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis 
                   dataKey="date" 
@@ -423,30 +443,28 @@ export default function AIMarketingPage() {
                 <Tooltip content={<CustomTooltip />} />
                 <Line 
                   type="monotone" 
-                  dataKey="Conversion %" 
-                  stroke="#E1467C" 
+                  dataKey="conversion" 
+                  name="Conversion %" 
+                  stroke="#10B981" 
                   strokeWidth={3}
-                  dot={{ fill: '#E1467C', r: 4 }}
+                  dot={{ fill: '#10B981', r: 4 }}
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="text-center py-12 text-[#CED4DA]">
-              No conversion data yet
+            <div className="h-[250px] flex items-center justify-center text-[#CED4DA]">
+              No data available - run Sync Now
             </div>
           )}
         </div>
 
         {/* ROI by Source */}
         <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-[#E1467C]" strokeWidth={1.5} />
-            ROI by Source
-          </h3>
-          {sourceROIs.length > 0 ? (
+          <h3 className="text-lg font-bold text-white mb-4">ROI by Source</h3>
+          {sourceROI.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={sourceROIs}>
+              <BarChart data={sourceROI.slice(0, 6)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis 
                   dataKey="name" 
@@ -458,72 +476,110 @@ export default function AIMarketingPage() {
                   style={{ fontSize: '12px' }}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="roi" fill="#6366F1" />
+                <Bar dataKey="roi" name="ROI" fill="#3B82F6" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="text-center py-12 text-[#CED4DA]">
-              No source data yet
+            <div className="h-[250px] flex items-center justify-center text-[#CED4DA]">
+              No sources configured
             </div>
           )}
         </div>
       </div>
 
       {/* Lead Distribution Pie */}
+      {leadDistribution.length > 0 && (
+        <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+          <h3 className="text-lg font-bold text-white mb-4">Lead Distribution by Source</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={leadDistribution}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {leadDistribution.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Next Best Actions Table */}
       <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <PieChart className="w-5 h-5 text-[#E1467C]" strokeWidth={1.5} />
-          Lead Distribution by Source
-        </h3>
-        {leadDistribution.length > 0 ? (
-          <div className="flex items-center justify-center">
-            <ResponsiveContainer width="100%" height={300}>
-              <RechartsPie>
-                <Pie
-                  data={leadDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {leadDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </RechartsPie>
-            </ResponsiveContainer>
+        <h2 className="text-xl font-bold text-white mb-4">Next Best Actions</h2>
+        {actions.length === 0 ? (
+          <div className="text-center py-12">
+            <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-400 opacity-30" />
+            <h3 className="text-xl font-semibold text-white mb-2">No pending actions</h3>
+            <p className="text-[#CED4DA]">Run Sync Now to generate recommendations</p>
           </div>
         ) : (
-          <div className="text-center py-12 text-[#CED4DA]">
-            No lead data yet
+          <div className="space-y-3">
+            {actions.slice(0, 10).map((action) => {
+              const client = action.client_id ? clients.find(c => c.id === action.client_id) : null;
+              const source = action.source_id ? sources.find(s => s.id === action.source_id) : null;
+              
+              return (
+                <div
+                  key={action.id}
+                  className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)] transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Badge className={`${
+                          action.confidence >= 0.8 ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                          action.confidence >= 0.6 ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                          'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                        } border`}>
+                          {Math.round(action.confidence * 100)}% Confidence
+                        </Badge>
+                        <Badge className="text-xs">
+                          {action.action_type.replace(/_/g, ' ')}
+                        </Badge>
+                      </div>
+                      <p className="text-white mb-2">{action.description}</p>
+                      <div className="flex items-center gap-4 text-xs text-[#CED4DA]">
+                        {client && <span>Target: {client.name}</span>}
+                        {source && <span>Source: {source.name}</span>}
+                        {action.due_date && (
+                          <span>Due: {new Date(action.due_date).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      <Button
+                        onClick={() => handleActionClick(action)}
+                        size="sm"
+                        className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        onClick={() => dismissActionMutation.mutate(action.id)}
+                        size="sm"
+                        variant="ghost"
+                        className="text-[#CED4DA]"
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-      </div>
-
-      {/* Next Best Actions */}
-      <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-[#E1467C]" strokeWidth={1.5} />
-          Next Best Actions
-        </h3>
-        <NextBestActionsTable
-          actions={actions}
-          clients={[]}
-          onRefresh={() => queryClient.invalidateQueries(['next-best-actions'])}
-        />
-      </div>
-
-      {/* Source Performance Details */}
-      <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
-        <h3 className="text-lg font-bold text-white mb-4">Source Performance Details</h3>
-        <SourcePerformanceTable
-          sources={sources}
-          leadEvents={leadEvents}
-        />
       </div>
     </div>
   );

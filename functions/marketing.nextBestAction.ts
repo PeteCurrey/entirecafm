@@ -9,28 +9,25 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const url = new URL(req.url);
-    const range = url.searchParams.get('range') || '30d';
     const orgId = user.org_id;
+    const url = new URL(req.url);
+    const days = parseInt(url.searchParams.get('days') || '30');
 
-    const daysBack = parseInt(range) || 30;
+    console.log(`📊 Exporting marketing metrics for org ${orgId}, last ${days} days`);
+
+    // Calculate date range
     const today = new Date();
     const fromDate = new Date(today);
-    fromDate.setDate(fromDate.getDate() - daysBack);
-
+    fromDate.setDate(fromDate.getDate() - days);
     const fromDateStr = fromDate.toISOString().split('T')[0];
-    const toDateStr = today.toISOString().split('T')[0];
 
-    console.log(`📊 Exporting marketing metrics for org ${orgId} from ${fromDateStr} to ${toDateStr}`);
-
-    // Fetch metrics data
-    const metrics = await base44.asServiceRole.entities.MarketingMetricsDaily.filter({
+    // Fetch metrics
+    const allMetrics = await base44.asServiceRole.entities.MarketingMetricsDaily.filter({
       org_id: orgId
     });
 
-    // Filter by date range and sort
-    const filteredMetrics = metrics
-      .filter(m => m.date >= fromDateStr && m.date <= toDateStr)
+    const filteredMetrics = allMetrics
+      .filter(m => m.date >= fromDateStr)
       .sort((a, b) => a.date.localeCompare(b.date));
 
     // Generate CSV
@@ -49,15 +46,15 @@ Deno.serve(async (req) => {
 
     const rows = filteredMetrics.map(m => [
       m.date,
-      m.leads || '0',
-      m.quotes_sent || '0',
-      m.quotes_approved || '0',
+      m.leads || 0,
+      m.quotes_sent || 0,
+      m.quotes_approved || 0,
       ((m.conversion_rate || 0) * 100).toFixed(1),
       (m.avg_quote_value || 0).toFixed(2),
       (m.revenue_realised || 0).toFixed(2),
       (m.spend || 0).toFixed(2),
       (m.roi || 0).toFixed(2),
-      `"${m.top_source || 'N/A'}"`
+      m.top_source || 'N/A'
     ]);
 
     const csvContent = [
@@ -71,10 +68,10 @@ Deno.serve(async (req) => {
       user_id: user.id,
       action: 'CREATE',
       entity_type: 'Export',
-      entity_id: `marketing-${range}`,
+      entity_id: 'marketing-metrics-csv',
       new_values: {
         type: 'marketing_metrics_csv',
-        range,
+        days,
         rows: filteredMetrics.length
       }
     });
@@ -83,12 +80,12 @@ Deno.serve(async (req) => {
       status: 200,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="marketing-metrics-${range}-${toDateStr}.csv"`
+        'Content-Disposition': `attachment; filename="marketing-metrics-${days}d-${new Date().toISOString().split('T')[0]}.csv"`
       }
     });
 
   } catch (error) {
-    console.error('exportMarketing error:', error);
+    console.error('exportMetrics error:', error);
     return Response.json({ 
       error: error.message 
     }, { status: 500 });
