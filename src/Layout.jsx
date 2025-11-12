@@ -27,7 +27,8 @@ import {
   TrendingUp,
   CreditCard,
   Megaphone,
-  Navigation
+  Navigation,
+  MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -61,6 +62,7 @@ const navigationSections = [
       { title: "AI Accounts Dashboard", url: createPageUrl("AIAccounts"), icon: CreditCard, roles: ["admin"] },
       { title: "AI Marketing Dashboard", url: createPageUrl("AIMarketing"), icon: Megaphone, roles: ["admin"] },
       { title: "Executive Briefing", url: createPageUrl("ExecutiveBrief"), icon: FileText, roles: ["admin"] },
+      { title: "AI Assistant", url: createPageUrl("AIAssistant"), icon: MessageCircle, roles: ["admin", "user"] },
     ]
   },
   {
