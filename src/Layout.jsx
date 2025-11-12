@@ -75,8 +75,6 @@ const navigationSections = [
   }
 ];
 
-import OnboardingWalkthrough from "../components/onboarding/OnboardingWalkthrough";
-
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
