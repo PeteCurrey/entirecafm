@@ -34,6 +34,32 @@ async function publishToRedis(channel, message) {
 const THRESHOLD_NORMAL_DRAFT = 0.80;
 const THRESHOLD_CONFIRMATION = 0.60;
 
+// Trade category inference keywords
+const TRADE_KEYWORDS = {
+  plumbing: ['valve', 'pipe', 'boiler', 'radiator', 'tap', 'basin', 'toilet', 'drain', 'water', 'heating', 'pressure'],
+  electrical: ['socket', 'switch', 'light', 'bulb', 'wire', 'fuse', 'circuit', 'breaker', 'outlet', 'electrical'],
+  hvac: ['air', 'conditioning', 'ventilation', 'filter', 'thermostat', 'duct', 'fan', 'ac unit', 'climate'],
+  fire_safety: ['fire', 'alarm', 'detector', 'extinguisher', 'emergency', 'smoke'],
+  security: ['lock', 'access', 'cctv', 'camera', 'alarm', 'security', 'door entry'],
+  lift: ['lift', 'elevator', 'hoist'],
+  general_maintenance: ['repair', 'fix', 'maintenance', 'service', 'check']
+};
+
+function inferTradeCategory(transcript, parts) {
+  const lowerTranscript = transcript.toLowerCase();
+  const allText = lowerTranscript + ' ' + parts.map(p => p.item_name.toLowerCase()).join(' ');
+  
+  const scores = {};
+  for (const [trade, keywords] of Object.entries(TRADE_KEYWORDS)) {
+    scores[trade] = keywords.filter(kw => allText.includes(kw)).length;
+  }
+  
+  const maxScore = Math.max(...Object.values(scores));
+  if (maxScore === 0) return 'general_maintenance';
+  
+  return Object.entries(scores).find(([_, score]) => score === maxScore)?.[0] || 'general_maintenance';
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -113,18 +139,22 @@ TRANSCRIPT:
 
 JOB CONTEXT:
 - Job: ${job.title}
+- Job Type: ${job.job_type}
 - Client: ${client?.name || 'Unknown'}
 - Site: ${site?.name || 'Unknown'}
-- Job Type: ${job.job_type}
 
 TASK:
 Extract the following information with high precision:
-1. Parts/materials mentioned (name and quantity)
+1. Parts/materials mentioned (name, quantity, and unit)
 2. Labour time spent or estimated (in minutes)
 3. Any additional notes or observations
 4. Your confidence in the extraction (0.0 - 1.0)
 
-Be specific about quantities. If unclear, lower your confidence score.
+IMPORTANT:
+- Be specific about quantities and units
+- If the engineer mentions time like "about an hour", extract as 60 minutes
+- If no quantity is mentioned, assume 1
+- If unclear, lower your confidence score
 `;
 
     const parsedData = await base44.integrations.Core.InvokeLLM({
@@ -169,23 +199,53 @@ Be specific about quantities. If unclear, lower your confidence score.
 
     console.log('✅ Parsed data:', parsedData);
 
-    // Step 3: Look up pricebook items and match
-    console.log('💰 Matching pricebook items...');
+    // Step 3: Infer trade category from transcript and parts
+    const inferredTradeCategory = inferTradeCategory(transcript, parsedData.parts || []);
+    console.log(`🔍 Inferred trade category: ${inferredTradeCategory}`);
+
+    // Step 4: Look up pricebook items by trade category
+    console.log('💰 Fetching pricebook items...');
     const pricebookItems = await base44.entities.PricebookItem.filter({ 
       org_id,
+      trade_category: inferredTradeCategory,
       is_active: true 
     });
 
+    // Also fetch labour items from all categories
+    const labourItems = await base44.entities.PricebookItem.filter({ 
+      org_id,
+      is_active: true 
+    });
+    const labourItem = labourItems.find(item => 
+      item.unit === 'hour' || item.item_name.toLowerCase().includes('labour')
+    );
+
+    console.log(`📋 Found ${pricebookItems.length} items in ${inferredTradeCategory} category`);
+
     const lineItems = [];
     let unmatchedItems = [];
+    let totalLabourMinutes = parsedData.labour_minutes || 0;
 
-    // Match parts to pricebook
+    // Step 5: Match parts to pricebook
     for (const part of parsedData.parts || []) {
-      // Simple fuzzy matching - in production, use better matching algorithm
-      const matched = pricebookItems.find(item => 
-        item.item_name.toLowerCase().includes(part.item_name.toLowerCase()) ||
-        part.item_name.toLowerCase().includes(item.item_name.toLowerCase())
-      );
+      // Enhanced fuzzy matching
+      const matched = pricebookItems.find(item => {
+        const itemLower = item.item_name.toLowerCase();
+        const partLower = part.item_name.toLowerCase();
+        
+        // Exact match
+        if (itemLower === partLower) return true;
+        
+        // Contains match
+        if (itemLower.includes(partLower) || partLower.includes(itemLower)) return true;
+        
+        // Word overlap (at least 2 common words)
+        const itemWords = itemLower.split(/\s+/);
+        const partWords = partLower.split(/\s+/);
+        const commonWords = itemWords.filter(w => partWords.includes(w) && w.length > 2);
+        
+        return commonWords.length >= 2;
+      });
 
       if (matched) {
         const quantity = part.quantity || 1;
@@ -194,40 +254,42 @@ Be specific about quantities. If unclear, lower your confidence score.
         const sellingPrice = unitPrice * (1 + markup);
         const total = sellingPrice * quantity;
 
+        // Add labour time if item has default_labour_minutes
+        if (matched.default_labour_minutes) {
+          totalLabourMinutes += matched.default_labour_minutes * quantity;
+        }
+
         lineItems.push({
           description: matched.item_name,
           quantity,
+          unit: matched.unit || 'each',
           unit_price: sellingPrice,
           total,
-          pricebook_item_id: matched.id
+          pricebook_item_id: matched.id,
+          trade_category: matched.trade_category
         });
       } else {
         unmatchedItems.push(part.item_name);
       }
     }
 
-    // Add labour if present
-    if (parsedData.labour_minutes && parsedData.labour_minutes > 0) {
-      const labourItem = pricebookItems.find(item => 
-        item.category === 'labour' || 
-        item.item_name.toLowerCase().includes('labour')
-      );
+    // Step 6: Add labour if present
+    if (totalLabourMinutes > 0 && labourItem) {
+      const hours = totalLabourMinutes / 60;
+      const unitPrice = labourItem.unit_price;
+      const markup = (labourItem.default_markup_pct || 20) / 100;
+      const sellingPrice = unitPrice * (1 + markup);
+      const total = sellingPrice * hours;
 
-      if (labourItem) {
-        const hours = parsedData.labour_minutes / 60;
-        const unitPrice = labourItem.unit_price;
-        const markup = (labourItem.default_markup_pct || 20) / 100;
-        const sellingPrice = unitPrice * (1 + markup);
-        const total = sellingPrice * hours;
-
-        lineItems.push({
-          description: `Labour - ${parsedData.labour_minutes} minutes`,
-          quantity: hours,
-          unit_price: sellingPrice,
-          total,
-          pricebook_item_id: labourItem.id
-        });
-      }
+      lineItems.push({
+        description: `Labour - ${totalLabourMinutes} minutes (${hours.toFixed(2)} hours)`,
+        quantity: hours,
+        unit: 'hour',
+        unit_price: sellingPrice,
+        total,
+        pricebook_item_id: labourItem.id,
+        trade_category: labourItem.trade_category || 'general_maintenance'
+      });
     }
 
     // Calculate totals
@@ -267,16 +329,17 @@ Be specific about quantities. If unclear, lower your confidence score.
         transcript,
         parsed_data: parsedData,
         confidence: adjustedConfidence,
-        unmatched_items: unmatchedItems
+        unmatched_items: unmatchedItems,
+        inferred_trade: inferredTradeCategory
       });
     }
 
-    // Step 4: Create Quote
+    // Step 7: Create Quote
     console.log('📝 Creating quote...');
     const quote = await base44.asServiceRole.entities.Quote.create({
       org_id,
       title: `${job.title} - Voice Quote`,
-      description: `🎙️ AI-Generated from voice note\n\n${parsedData.notes || ''}\n\nTranscript: "${transcript}"`,
+      description: `🎙️ AI-Generated from voice note (${inferredTradeCategory})\n\n${parsedData.notes || ''}\n\nTranscript: "${transcript}"`,
       client_id: job.client_id,
       site_id: job.site_id,
       status: quoteStatus,
@@ -287,16 +350,15 @@ Be specific about quantities. If unclear, lower your confidence score.
       total,
       valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days
       notes: unmatchedItems.length > 0 
-        ? `⚠️ Unmatched items requiring attention: ${unmatchedItems.join(', ')}\n\nConfidence: ${(adjustedConfidence * 100).toFixed(0)}%\n\n${parsedData.reasoning || ''}`
-        : `✅ Confidence: ${(adjustedConfidence * 100).toFixed(0)}%`
+        ? `⚠️ Unmatched items requiring attention: ${unmatchedItems.join(', ')}\n\nTrade: ${inferredTradeCategory}\nConfidence: ${(adjustedConfidence * 100).toFixed(0)}%\n\n${parsedData.reasoning || ''}`
+        : `✅ Trade: ${inferredTradeCategory}\nConfidence: ${(adjustedConfidence * 100).toFixed(0)}%\nTotal labour: ${totalLabourMinutes} minutes`
     });
 
     quoteId = quote.id;
 
     // Update job with quote reference
-    await base44.asServiceRole.entities.Job.update(job_id, {
-      quote_id: quote.id
-    });
+    const jobUpdates = { quote_id: quote.id };
+    await base44.asServiceRole.entities.Job.update(job_id, jobUpdates);
 
     // Update voice note with results
     await base44.asServiceRole.entities.VoiceNote.update(voiceNote.id, {
@@ -306,11 +368,13 @@ Be specific about quantities. If unclear, lower your confidence score.
         ...parsedData,
         matched_items: lineItems.length,
         unmatched_items: unmatchedItems,
-        adjusted_confidence: adjustedConfidence
+        adjusted_confidence: adjustedConfidence,
+        inferred_trade: inferredTradeCategory,
+        total_labour_minutes: totalLabourMinutes
       }
     });
 
-    // Step 5: Publish to Redis
+    // Step 8: Publish to Redis
     await publishToRedis(`quotes.org.${org_id}`, {
       type: 'quote_created',
       quote: {
@@ -319,7 +383,8 @@ Be specific about quantities. If unclear, lower your confidence score.
         status: quoteStatus,
         total,
         source: 'voice_note',
-        confidence: adjustedConfidence
+        confidence: adjustedConfidence,
+        trade_category: inferredTradeCategory
       },
       timestamp: new Date().toISOString()
     });
@@ -334,7 +399,8 @@ Be specific about quantities. If unclear, lower your confidence score.
       new_values: {
         source: 'voice_note',
         confidence: adjustedConfidence,
-        status
+        status,
+        trade_category: inferredTradeCategory
       }
     });
 
@@ -354,6 +420,8 @@ Be specific about quantities. If unclear, lower your confidence score.
       parsed_data: parsedData,
       line_items: lineItems,
       unmatched_items: unmatchedItems,
+      inferred_trade: inferredTradeCategory,
+      total_labour_minutes: totalLabourMinutes,
       totals: {
         subtotal,
         vat_amount,
