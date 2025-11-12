@@ -13,12 +13,15 @@ import {
   Zap,
   User,
   Bot,
-  Loader2
+  Loader2,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { AI_PERSONA } from "../components/ai/AIPersona";
 
 export default function AIAssistantPage() {
   const [user, setUser] = useState(null);
@@ -27,6 +30,8 @@ export default function AIAssistantPage() {
   const [inputMessage, setInputMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const messagesEndRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -109,11 +114,14 @@ export default function AIAssistantPage() {
         timestamp: new Date()
       }]);
 
-      // Speak response (if browser supports)
-      if ('speechSynthesis' in window && result.tts_text) {
+      // Speak response (if browser supports and voice enabled)
+      if ('speechSynthesis' in window && result.tts_text && voiceEnabled) {
+        setIsSpeaking(true);
         const utterance = new SpeechSynthesisUtterance(result.tts_text);
-        utterance.rate = 0.95;
-        utterance.pitch = 1;
+        utterance.rate = AI_PERSONA.speech.rate;
+        utterance.pitch = AI_PERSONA.speech.pitch;
+        utterance.volume = AI_PERSONA.speech.volume;
+        utterance.onend = () => setIsSpeaking(false);
         window.speechSynthesis.speak(utterance);
       }
     },
@@ -201,17 +209,45 @@ export default function AIAssistantPage() {
               <MessageCircle className="w-6 h-6 text-[#E1467C]" strokeWidth={1.5} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">EntireCAFM AI Assistant</h1>
+              <h1 className="text-2xl font-bold text-white">{AI_PERSONA.name}</h1>
               <p className="text-sm text-[#CED4DA]">
-                Ask about operations, finances, marketing, or revenue
+                {AI_PERSONA.role} • Ask about operations, finances, marketing, or revenue
               </p>
             </div>
           </div>
-          {sessionId && (
-            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 border">
-              Session Active
-            </Badge>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Voice Status Indicator */}
+            <Button
+              onClick={() => setVoiceEnabled(!voiceEnabled)}
+              variant="ghost"
+              size="sm"
+              className={`${voiceEnabled ? 'text-[#27B3F7]' : 'text-[#CED4DA]'}`}
+            >
+              {voiceEnabled ? (
+                <>
+                  <Volume2 className="w-4 h-4 mr-2" strokeWidth={1.5} />
+                  Voice On
+                </>
+              ) : (
+                <>
+                  <VolumeX className="w-4 h-4 mr-2" strokeWidth={1.5} />
+                  Voice Off
+                </>
+              )}
+            </Button>
+
+            {isSpeaking && (
+              <Badge className="bg-[#27B3F7]/20 text-[#27B3F7] border-[#27B3F7]/30 border animate-pulse">
+                Speaking...
+              </Badge>
+            )}
+
+            {sessionId && (
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 border">
+                Session Active
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
@@ -235,19 +271,38 @@ export default function AIAssistantPage() {
       <div className="flex-1 glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)] mb-6 overflow-y-auto">
         {messages.length === 0 ? (
           <div className="text-center py-12">
-            <MessageCircle className="w-16 h-16 mx-auto mb-4 text-[#CED4DA] opacity-30" />
-            <h3 className="text-xl font-semibold text-white mb-2">Start a conversation</h3>
-            <p className="text-[#CED4DA] mb-6">
-              Ask me anything about your operations, finances, marketing, or forecasts
+            <div className="w-24 h-24 rounded-2xl bg-[#E41E65]/20 flex items-center justify-center mx-auto mb-6 magenta-glow">
+              <MessageCircle className="w-12 h-12 text-[#E41E65]" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-2">
+              I'm {AI_PERSONA.name}
+            </h3>
+            <p className="text-[#CED4DA] mb-8">
+              {AI_PERSONA.templates.greeting}
             </p>
-            <div className="text-left max-w-md mx-auto space-y-2 text-sm text-[#CED4DA]">
-              <p>💡 Try asking:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>"What's our current org health score?"</li>
-                <li>"Show me overdue invoices"</li>
-                <li>"What's my marketing ROI this week?"</li>
-                <li>"Generate the executive brief"</li>
-                <li>"How many jobs are at SLA risk?"</li>
+            <div className="text-left max-w-lg mx-auto glass-panel rounded-xl p-6 border border-[rgba(255,255,255,0.08)]">
+              <p className="text-sm font-semibold text-white mb-3">💡 Example questions:</p>
+              <ul className="space-y-2 text-sm text-[#CED4DA]">
+                <li className="flex items-start gap-2">
+                  <span className="text-[#27B3F7]">→</span>
+                  <span>"What's our current org health score?"</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#27B3F7]">→</span>
+                  <span>"Show me overdue invoices"</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#27B3F7]">→</span>
+                  <span>"What's my marketing ROI this week?"</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#27B3F7]">→</span>
+                  <span>"Generate the executive brief"</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#27B3F7]">→</span>
+                  <span>"Give me the week in review"</span>
+                </li>
               </ul>
             </div>
           </div>

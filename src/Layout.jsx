@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import OnboardingWalkthrough from "../components/onboarding/OnboardingWalkthrough";
 import {
   LayoutDashboard,
   Wrench,
@@ -74,11 +75,14 @@ const navigationSections = [
   }
 ];
 
+import OnboardingWalkthrough from "../components/onboarding/OnboardingWalkthrough";
+
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -88,8 +92,28 @@ export default function Layout({ children, currentPageName }) {
     try {
       const userData = await base44.auth.me();
       setUser(userData);
+      
+      // Check if user needs onboarding
+      if (userData && !userData.onboarded) {
+        setShowOnboarding(true);
+      }
     } catch (error) {
       console.error("Error loading user:", error);
+    }
+  };
+
+  const handleCompleteOnboarding = async () => {
+    try {
+      await base44.auth.updateMe({
+        onboarded: true,
+        onboarded_date: new Date().toISOString()
+      });
+      setShowOnboarding(false);
+      // Refresh user data
+      const userData = await base44.auth.me();
+      setUser(userData);
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
     }
   };
 
@@ -103,18 +127,28 @@ export default function Layout({ children, currentPageName }) {
   })).filter(section => section.items.length > 0);
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#0D1117]">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
-        
-        * {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        
-        h1, h2, h3, h4, h5, h6 {
-          font-family: 'Montserrat', sans-serif;
-          font-weight: 600;
-        }
+    <>
+      {/* Onboarding Walkthrough */}
+      {showOnboarding && (
+        <OnboardingWalkthrough onComplete={handleCompleteOnboarding} />
+      )}
+
+      <div className="min-h-screen relative overflow-hidden bg-[#0D1117]">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap');
+          
+          * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          }
+          
+          h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+          }
+          
+          code, pre, .font-mono {
+            font-family: 'Roboto Mono', monospace;
+          }
         
         .glass-panel {
           background: rgba(255, 255, 255, 0.04);
@@ -166,10 +200,12 @@ export default function Layout({ children, currentPageName }) {
         <aside className="hidden lg:flex lg:flex-col lg:w-60 glass-panel border-r border-[rgba(255,255,255,0.08)] overflow-y-auto">
           <div className="p-6 border-b border-[rgba(255,255,255,0.08)]">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-white" strokeWidth={1.5} />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#E41E65] to-[#C13666] flex items-center justify-center magenta-glow">
+                <Wrench className="w-4 h-4 text-white" strokeWidth={2} />
               </div>
-              <span className="text-sm font-semibold text-white tracking-wide">ENTIRECAFM</span>
+              <span className="text-sm font-bold text-white tracking-wide">
+                ENTIRE<span className="text-[#E41E65]">CAFM</span>
+              </span>
             </div>
           </div>
 
@@ -201,8 +237,12 @@ export default function Layout({ children, currentPageName }) {
         <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0D1117] border-b border-[rgba(255,255,255,0.08)] p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Wrench className="w-5 h-5 text-white" strokeWidth={1.5} />
-              <span className="text-sm font-semibold text-white">ENTIRECAFM</span>
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#E41E65] to-[#C13666] flex items-center justify-center">
+                <Wrench className="w-4 h-4 text-white" strokeWidth={2} />
+              </div>
+              <span className="text-sm font-bold text-white">
+                ENTIRE<span className="text-[#E41E65]">CAFM</span>
+              </span>
             </div>
             <Button
               variant="ghost"
@@ -249,6 +289,7 @@ export default function Layout({ children, currentPageName }) {
           {children}
         </main>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
