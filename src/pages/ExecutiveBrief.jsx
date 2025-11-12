@@ -3,21 +3,24 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FileText,
-  Download,
   RefreshCw,
-  Plus,
-  Mail,
-  Users,
+  Download,
   Calendar,
   TrendingUp,
   AlertTriangle,
-  CheckCircle,
+  Users,
+  DollarSign,
+  Target,
+  Plus,
+  Mail,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  CheckCircle,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Tabs,
   TabsContent,
@@ -44,13 +47,12 @@ export default function ExecutiveBriefPage() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showRecipientForm, setShowRecipientForm] = useState(false);
+  const [showAddRecipientForm, setShowAddRecipientForm] = useState(false);
   const [activeTab, setActiveTab] = useState('current');
   const [recipientForm, setRecipientForm] = useState({
     name: '',
     email: '',
     role: 'Director',
-    active: true,
     preferred_channel: 'email'
   });
 
@@ -93,23 +95,23 @@ export default function ExecutiveBriefPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['executive-briefs']);
-      setIsGenerating(false);
     },
   });
 
-  const createRecipientMutation = useMutation({
-    mutationFn: (data) => base44.entities.ExecutiveRecipient.create({
-      ...data,
-      org_id: user.org_id
-    }),
+  const addRecipientMutation = useMutation({
+    mutationFn: async (data) => {
+      return base44.entities.ExecutiveRecipient.create({
+        ...data,
+        org_id: user.org_id
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['executive-recipients']);
-      setShowRecipientForm(false);
+      setShowAddRecipientForm(false);
       setRecipientForm({
         name: '',
         email: '',
         role: 'Director',
-        active: true,
         preferred_channel: 'email'
       });
     },
@@ -126,14 +128,14 @@ export default function ExecutiveBriefPage() {
     setIsGenerating(true);
     try {
       await generateBriefMutation.mutateAsync();
-    } catch (error) {
-      console.error("Error generating brief:", error);
+    } finally {
       setIsGenerating(false);
     }
   };
 
+  // Sort briefs by week commencing (newest first)
   const sortedBriefs = [...briefs].sort((a, b) => 
-    new Date(b.week_commencing) - new Date(a.week_commencing)
+    b.week_commencing.localeCompare(a.week_commencing)
   );
 
   const currentBrief = sortedBriefs[0];
@@ -144,7 +146,13 @@ export default function ExecutiveBriefPage() {
     Director: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     Ops: 'bg-green-500/20 text-green-400 border-green-500/30',
     Finance: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    Marketing: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+    Marketing: 'bg-pink-500/20 text-pink-400 border-pink-500/30'
+  };
+
+  const channelIcons = {
+    email: <Mail className="w-3 h-3" />,
+    slack: <Users className="w-3 h-3" />,
+    pdf: <Download className="w-3 h-3" />
   };
 
   return (
@@ -154,35 +162,33 @@ export default function ExecutiveBriefPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Executive AI Briefing</h1>
-            <p className="text-[#CED4DA]">Automated weekly performance summaries</p>
+            <p className="text-[#CED4DA]">Automated weekly performance summaries and recommendations</p>
           </div>
-          <Button
-            onClick={handleGenerateBrief}
-            disabled={isGenerating}
-            className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} strokeWidth={1.5} />
-            Generate Brief Now
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleGenerateBrief}
+              disabled={isGenerating}
+              className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+              {isGenerating ? 'Generating...' : 'Generate Brief Now'}
+            </Button>
+          </div>
         </div>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
             <div className="text-sm text-[#CED4DA] mb-1">Total Briefs</div>
             <div className="text-3xl font-bold text-white">{briefs.length}</div>
           </div>
-          <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
+          <div className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
             <div className="text-sm text-[#CED4DA] mb-1">Active Recipients</div>
-            <div className="text-3xl font-bold text-white">
-              {recipients.filter(r => r.active).length}
-            </div>
+            <div className="text-3xl font-bold text-white">{recipients.filter(r => r.active).length}</div>
           </div>
-          <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
-            <div className="text-sm text-[#CED4DA] mb-1">Last Generated</div>
-            <div className="text-lg font-bold text-white">
-              {currentBrief ? format(new Date(currentBrief.generated_at), 'MMM d, yyyy') : 'Never'}
-            </div>
+          <div className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
+            <div className="text-sm text-[#CED4DA] mb-1">Next Generation</div>
+            <div className="text-sm text-white font-semibold">Monday 06:00 GMT</div>
+            <div className="text-xs text-[#CED4DA] mt-1">Automated weekly</div>
           </div>
         </div>
       </div>
@@ -217,183 +223,290 @@ export default function ExecutiveBriefPage() {
         <TabsContent value="current" className="space-y-6 mt-6">
           {currentBrief ? (
             <>
-              {/* Brief Header */}
-              <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
-                      Week Commencing {format(new Date(currentBrief.week_commencing), 'MMMM d, yyyy')}
-                    </h2>
-                    <div className="flex items-center gap-3 text-sm text-[#CED4DA]">
-                      <span>Generated: {format(new Date(currentBrief.generated_at), 'MMM d, h:mm a')}</span>
-                      {currentBrief.distributed_to?.length > 0 && (
-                        <Badge className="text-xs">
-                          <Mail className="w-3 h-3 mr-1" />
-                          Sent to {currentBrief.distributed_to.length}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => window.open(currentBrief.pdf_url, '_blank')}
-                    variant="outline"
-                    className="border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
-                  >
-                    <Download className="w-4 h-4 mr-2" strokeWidth={1.5} />
-                    View Report
-                  </Button>
-                </div>
-              </div>
-
-              {/* KPI Cards */}
+              {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className={`glass-panel rounded-xl p-5 border ${
+                <div className={`glass-panel rounded-2xl p-6 border ${
                   currentBrief.org_health_score >= 80 ? 'border-green-500/30' :
                   currentBrief.org_health_score >= 60 ? 'border-yellow-500/30' :
                   'border-red-500/30'
                 }`}>
-                  <div className="text-sm text-[#CED4DA] mb-1">Org Health</div>
-                  <div className={`text-4xl font-bold ${
-                    currentBrief.org_health_score >= 80 ? 'text-green-400' :
-                    currentBrief.org_health_score >= 60 ? 'text-yellow-400' :
-                    'text-red-400'
-                  }`}>
-                    {currentBrief.org_health_score || 0}
-                  </div>
-                </div>
-
-                <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
-                  <div className="text-sm text-[#CED4DA] mb-1">30-Day Revenue</div>
-                  <div className="text-3xl font-bold text-white">
-                    £{(currentBrief.forecast_summary_json?.projection_30d || 0).toLocaleString()}
-                  </div>
-                  <Badge className={`${
-                    currentBrief.forecast_summary_json?.risk_band === 'LOW' ? 'badge-green' :
-                    currentBrief.forecast_summary_json?.risk_band === 'MED' ? 'badge-yellow' :
-                    'badge-red'
-                  } text-xs mt-1`}>
-                    {currentBrief.forecast_summary_json?.risk_band || 'N/A'} RISK
-                  </Badge>
-                </div>
-
-                <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
-                  <div className="text-sm text-[#CED4DA] mb-1">Expected Margin</div>
-                  <div className="text-3xl font-bold text-green-400">
-                    £{(currentBrief.forecast_summary_json?.expected_margin || 0).toLocaleString()}
-                  </div>
-                </div>
-
-                <div className="glass-panel rounded-xl p-5 border border-red-500/30 bg-red-500/5">
-                  <div className="text-sm text-[#CED4DA] mb-1">Overdue Invoices</div>
-                  <div className="text-3xl font-bold text-red-400">
-                    £{(currentBrief.financial_summary_json?.overdue_value || 0).toLocaleString()}
-                  </div>
-                  <div className="text-xs text-[#CED4DA] mt-1">
-                    {currentBrief.financial_summary_json?.overdue_count || 0} invoices
-                  </div>
-                </div>
-
-                <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
-                  <div className="text-sm text-[#CED4DA] mb-1">SLA Breaches</div>
-                  <div className={`text-3xl font-bold ${
-                    (currentBrief.operational_summary_json?.sla_breaches || 0) === 0 ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {currentBrief.operational_summary_json?.sla_breaches || 0}
-                  </div>
-                  {currentBrief.operational_summary_json?.delta_sla_pct && (
-                    <div className={`text-xs font-semibold mt-1 ${
-                      currentBrief.operational_summary_json.delta_sla_pct > 0 ? 'text-red-400' : 'text-green-400'
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      currentBrief.org_health_score >= 80 ? 'bg-green-500/20' :
+                      currentBrief.org_health_score >= 60 ? 'bg-yellow-500/20' :
+                      'bg-red-500/20'
                     }`}>
-                      {currentBrief.operational_summary_json.delta_sla_pct > 0 ? '↑' : '↓'} 
-                      {Math.abs(currentBrief.operational_summary_json.delta_sla_pct).toFixed(0)}% vs last week
+                      <Target className={`w-6 h-6 ${
+                        currentBrief.org_health_score >= 80 ? 'text-green-400' :
+                        currentBrief.org_health_score >= 60 ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`} strokeWidth={1.5} />
                     </div>
+                    <div>
+                      <div className="text-sm text-[#CED4DA]">Org Health</div>
+                      <div className={`text-3xl font-bold ${
+                        currentBrief.org_health_score >= 80 ? 'text-green-400' :
+                        currentBrief.org_health_score >= 60 ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`}>
+                        {currentBrief.org_health_score}
+                      </div>
+                    </div>
+                  </div>
+                  {currentBrief.operational_summary_json?.delta_pct !== undefined && (
+                    <Badge className={`${
+                      currentBrief.operational_summary_json.delta_pct > 0 ? 'bg-green-500/20 text-green-400' :
+                      currentBrief.operational_summary_json.delta_pct < 0 ? 'bg-red-500/20 text-red-400' :
+                      'bg-gray-500/20 text-gray-400'
+                    } border-none text-xs`}>
+                      {currentBrief.operational_summary_json.delta_pct > 0 ? '↑' : currentBrief.operational_summary_json.delta_pct < 0 ? '↓' : '→'}
+                      {Math.abs(currentBrief.operational_summary_json.delta_pct).toFixed(1)}% WoW
+                    </Badge>
                   )}
                 </div>
 
-                <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
-                  <div className="text-sm text-[#CED4DA] mb-1">Marketing ROI</div>
-                  <div className="text-3xl font-bold text-white">
-                    {(currentBrief.marketing_summary_json?.avg_roi || 0).toFixed(1)}×
+                <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+                      <TrendingUp className="w-6 h-6 text-green-400" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <div className="text-sm text-[#CED4DA]">30-Day Revenue</div>
+                      <div className="text-2xl font-bold text-white">
+                        £{(currentBrief.forecast_summary_json?.projection_30d || 0).toLocaleString()}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-[#CED4DA] mt-1">
-                    {currentBrief.marketing_summary_json?.conversion_rate 
-                      ? (currentBrief.marketing_summary_json.conversion_rate * 100).toFixed(0) 
-                      : 0}% conversion
+                  <Badge className={`${
+                    currentBrief.forecast_summary_json?.risk_band === 'LOW' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                    currentBrief.forecast_summary_json?.risk_band === 'MED' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                    'bg-red-500/20 text-red-400 border-red-500/30'
+                  } border text-xs`}>
+                    {currentBrief.forecast_summary_json?.risk_band || 'N/A'} Risk
+                  </Badge>
+                </div>
+
+                <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                      <DollarSign className="w-6 h-6 text-red-400" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <div className="text-sm text-[#CED4DA]">Overdue</div>
+                      <div className="text-2xl font-bold text-red-400">
+                        £{(currentBrief.financial_summary_json?.overdue_value || 0).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-[#CED4DA]">
+                    {currentBrief.financial_summary_json?.overdue_count || 0} invoices
                   </div>
                 </div>
               </div>
 
-              {/* Risk Summary */}
-              {currentBrief.risk_summary_json?.top_risks?.length > 0 && (
-                <div className="glass-panel rounded-2xl p-6 border border-red-500/30 bg-red-500/5">
+              {/* AI Recommendations */}
+              {currentBrief.recommendations_json && currentBrief.recommendations_json.length > 0 && (
+                <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-red-400" strokeWidth={1.5} />
-                    Risk Flags ({currentBrief.risk_summary_json.active_alerts || 0} active alerts)
+                    <Target className="w-5 h-5 text-[#E1467C]" strokeWidth={1.5} />
+                    Top AI Recommendations
                   </h3>
                   <div className="space-y-3">
-                    {currentBrief.risk_summary_json.top_risks.map((risk, idx) => (
-                      <div key={idx} className="glass-panel rounded-lg p-4 border border-red-500/30">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-semibold text-white">{risk.title}</h4>
-                          <Badge className={`${
-                            risk.severity === 'HIGH' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                            'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                          } border text-xs`}>
-                            {risk.severity}
-                          </Badge>
+                    {currentBrief.recommendations_json.slice(0, 5).map((rec, idx) => (
+                      <div key={idx} className="glass-panel rounded-lg p-4 border border-[rgba(255,255,255,0.08)]">
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl">
+                            {rec.priority === 'urgent' ? '🔴' :
+                             rec.priority === 'high' ? '🟠' :
+                             rec.priority === 'medium' ? '🟡' :
+                             '🟢'}
+                          </span>
+                          <div className="flex-1">
+                            <p className="text-white mb-2">{rec.action}</p>
+                            <div className="flex items-center gap-3 text-xs">
+                              <Badge className="text-xs">
+                                {rec.category}
+                              </Badge>
+                              <span className="text-[#CED4DA]">
+                                Confidence: {Math.round((rec.confidence || 0) * 100)}%
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-[#CED4DA]">{risk.description}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* AI Recommendations */}
-              {currentBrief.recommendations_json?.length > 0 && (
+              {/* Operational & Financial Overview */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
-                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-[#E1467C]" strokeWidth={1.5} />
-                    AI Recommendations
-                  </h3>
+                  <h3 className="text-lg font-bold text-white mb-4">Operational Overview</h3>
                   <div className="space-y-3">
-                    {currentBrief.recommendations_json.map((rec, idx) => (
-                      <div key={idx} className="glass-panel rounded-lg p-4 border border-[#E1467C]/30 bg-[#E1467C]/5">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-semibold text-white">{rec.title}</h4>
-                          <div className="flex items-center gap-2">
-                            <Badge className={`${
-                              rec.priority === 'HIGH' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                              rec.priority === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
-                              'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                            } border text-xs`}>
-                              {rec.priority}
-                            </Badge>
-                            {rec.confidence && (
-                              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 border text-xs">
-                                {Math.round(rec.confidence * 100)}%
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-sm text-[#CED4DA]">{rec.description}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#CED4DA]">SLA Breaches</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xl font-bold ${
+                          (currentBrief.operational_summary_json?.sla_breaches || 0) > 0 ? 'text-red-400' : 'text-green-400'
+                        }`}>
+                          {currentBrief.operational_summary_json?.sla_breaches || 0}
+                        </span>
+                        {currentBrief.operational_summary_json?.sla_delta !== undefined && (
+                          <Badge className={`${
+                            currentBrief.operational_summary_json.sla_delta > 0 ? 'bg-red-500/20 text-red-400' :
+                            currentBrief.operational_summary_json.sla_delta < 0 ? 'bg-green-500/20 text-green-400' :
+                            'bg-gray-500/20 text-gray-400'
+                          } border-none text-xs`}>
+                            {currentBrief.operational_summary_json.sla_delta > 0 ? '+' : ''}{currentBrief.operational_summary_json.sla_delta}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#CED4DA]">At-Risk Jobs</span>
+                      <span className="text-xl font-bold text-yellow-400">
+                        {currentBrief.operational_summary_json?.at_risk_jobs || 0}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#CED4DA]">Avg Utilisation</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl font-bold text-white">
+                          {currentBrief.operational_summary_json?.avg_utilisation || 0}%
+                        </span>
+                        {currentBrief.operational_summary_json?.utilisation_delta !== undefined && (
+                          <Badge className={`${
+                            currentBrief.operational_summary_json.utilisation_delta > 0 ? 'bg-green-500/20 text-green-400' :
+                            'bg-red-500/20 text-red-400'
+                          } border-none text-xs`}>
+                            {currentBrief.operational_summary_json.utilisation_delta > 0 ? '+' : ''}{currentBrief.operational_summary_json.utilisation_delta.toFixed(1)}%
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#CED4DA]">Completed Jobs</span>
+                      <span className="text-xl font-bold text-green-400">
+                        {currentBrief.operational_summary_json?.completed_jobs || 0}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+                  <h3 className="text-lg font-bold text-white mb-4">Financial Summary</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#CED4DA]">Overdue Value</span>
+                      <span className="text-xl font-bold text-red-400">
+                        £{(currentBrief.financial_summary_json?.overdue_value || 0).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#CED4DA]">Expected Collections</span>
+                      <span className="text-xl font-bold text-green-400">
+                        £{(currentBrief.financial_summary_json?.collections_expected || 0).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#CED4DA]">Unbilled (Approved)</span>
+                      <span className="text-xl font-bold text-yellow-400">
+                        £{(currentBrief.financial_summary_json?.unbilled_value || 0).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#CED4DA]">Expected Margin</span>
+                      <span className="text-xl font-bold text-white">
+                        £{(currentBrief.forecast_summary_json?.expected_margin || 0).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Marketing Performance */}
+              {currentBrief.marketing_summary_json && (
+                <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+                  <h3 className="text-lg font-bold text-white mb-4">Marketing Performance (7d)</h3>
+                  <div className="grid grid-cols-3 gap-6">
+                    <div>
+                      <div className="text-sm text-[#CED4DA] mb-1">Leads</div>
+                      <div className="text-2xl font-bold text-white">
+                        {currentBrief.marketing_summary_json.leads || 0}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-[#CED4DA] mb-1">Conversion Rate</div>
+                      <div className="text-2xl font-bold text-white">
+                        {((currentBrief.marketing_summary_json.conversion_rate || 0) * 100).toFixed(1)}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-[#CED4DA] mb-1">ROI</div>
+                      <div className="text-2xl font-bold text-green-400">
+                        {(currentBrief.marketing_summary_json.roi || 0).toFixed(1)}×
+                      </div>
+                    </div>
+                  </div>
+                  {currentBrief.marketing_summary_json.top_source && (
+                    <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.08)]">
+                      <span className="text-sm text-[#CED4DA]">Top Source: </span>
+                      <span className="text-white font-semibold">{currentBrief.marketing_summary_json.top_source}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Risk Summary */}
+              {currentBrief.risk_summary_json?.critical_issues?.length > 0 && (
+                <div className="glass-panel rounded-2xl p-6 border border-red-500/30 bg-red-500/5">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-400" strokeWidth={1.5} />
+                    Critical Issues
+                  </h3>
+                  <div className="space-y-2">
+                    {currentBrief.risk_summary_json.critical_issues.map((issue, idx) => (
+                      <div key={idx} className="glass-panel rounded-lg p-3 border border-red-500/30">
+                        <div className="text-sm font-semibold text-red-400 mb-1">{issue.title}</div>
+                        <div className="text-xs text-[#CED4DA]">{issue.description}</div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
+
+              {/* Download Button */}
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => window.open(currentBrief.pdf_url, '_blank')}
+                  className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
+                >
+                  <Download className="w-4 h-4 mr-2" strokeWidth={1.5} />
+                  Download Full Report
+                </Button>
+              </div>
             </>
           ) : (
             <div className="glass-panel rounded-2xl p-12 border border-[rgba(255,255,255,0.08)] text-center">
               <FileText className="w-16 h-16 mx-auto mb-4 text-[#CED4DA] opacity-30" />
-              <h3 className="text-xl font-semibold text-white mb-2">No Brief Generated</h3>
-              <p className="text-[#CED4DA] mb-6">Generate your first executive briefing</p>
+              <h3 className="text-xl font-semibold text-white mb-2">No brief available for current week</h3>
+              <p className="text-[#CED4DA] mb-6">
+                Next automatic generation: Monday 06:00 GMT
+              </p>
               <Button
                 onClick={handleGenerateBrief}
+                disabled={isGenerating}
                 className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
               >
-                <RefreshCw className="w-4 h-4 mr-2" strokeWidth={1.5} />
-                Generate Brief Now
+                <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+                Generate Now
               </Button>
             </div>
           )}
@@ -404,62 +517,44 @@ export default function ExecutiveBriefPage() {
           {historicalBriefs.length === 0 ? (
             <div className="glass-panel rounded-2xl p-12 border border-[rgba(255,255,255,0.08)] text-center">
               <Calendar className="w-16 h-16 mx-auto mb-4 text-[#CED4DA] opacity-30" />
-              <h3 className="text-xl font-semibold text-white mb-2">No Historical Briefs</h3>
-              <p className="text-[#CED4DA]">Previous briefs will appear here</p>
+              <h3 className="text-xl font-semibold text-white mb-2">No historical briefs</h3>
+              <p className="text-[#CED4DA]">Past briefs will appear here</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {historicalBriefs.map(brief => (
                 <div
                   key={brief.id}
-                  className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)] transition-all"
+                  className="glass-panel rounded-2xl p-5 border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)] transition-all"
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <h3 className="text-lg font-semibold text-white">
-                          Week of {format(new Date(brief.week_commencing), 'MMMM d, yyyy')}
-                        </h3>
-                        <Badge className={`${
-                          brief.org_health_score >= 80 ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                          brief.org_health_score >= 60 ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
-                          'bg-red-500/20 text-red-400 border-red-500/30'
-                        } border`}>
-                          Health: {brief.org_health_score}
+                      <div className="flex items-center gap-3 mb-2">
+                        <Calendar className="w-4 h-4 text-[#CED4DA]" />
+                        <span className="font-semibold text-white">
+                          Week {format(new Date(brief.week_commencing), 'MMM d, yyyy')}
+                        </span>
+                        <Badge className="text-xs">
+                          {brief.distributed_to?.length || 0} recipients
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <span className="text-[#CED4DA]">Revenue:</span>
-                          <span className="text-white font-semibold ml-2">
-                            £{(brief.forecast_summary_json?.projection_30d || 0).toLocaleString()}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[#CED4DA]">Margin:</span>
-                          <span className="text-white font-semibold ml-2">
-                            £{(brief.forecast_summary_json?.expected_margin || 0).toLocaleString()}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[#CED4DA]">Overdue:</span>
-                          <span className="text-red-400 font-semibold ml-2">
-                            £{(brief.financial_summary_json?.overdue_value || 0).toLocaleString()}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[#CED4DA]">Alerts:</span>
-                          <span className="text-white font-semibold ml-2">
-                            {brief.risk_summary_json?.active_alerts || 0}
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-6 text-sm">
+                        <span className="text-[#CED4DA]">
+                          Org Health: <span className="text-white font-semibold">{brief.org_health_score}</span>
+                        </span>
+                        <span className="text-[#CED4DA]">
+                          Revenue: <span className="text-white font-semibold">£{(brief.forecast_summary_json?.projection_30d || 0).toLocaleString()}</span>
+                        </span>
+                        <span className="text-[#CED4DA]">
+                          Overdue: <span className="text-red-400 font-semibold">£{(brief.financial_summary_json?.overdue_value || 0).toLocaleString()}</span>
+                        </span>
                       </div>
                     </div>
                     <Button
                       onClick={() => window.open(brief.pdf_url, '_blank')}
-                      size="sm"
                       variant="outline"
-                      className="border-[rgba(255,255,255,0.08)] text-[#CED4DA] ml-4"
+                      size="sm"
+                      className="border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
                     >
                       <Download className="w-4 h-4 mr-2" strokeWidth={1.5} />
                       Download
@@ -474,11 +569,11 @@ export default function ExecutiveBriefPage() {
         {/* Recipients Tab */}
         <TabsContent value="recipients" className="space-y-6 mt-6">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-[#CED4DA]">
-              Manage who receives weekly executive briefings
+            <p className="text-[#CED4DA]">
+              Manage who receives automated weekly briefings
             </p>
             <Button
-              onClick={() => setShowRecipientForm(true)}
+              onClick={() => setShowAddRecipientForm(true)}
               size="sm"
               className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
             >
@@ -490,10 +585,10 @@ export default function ExecutiveBriefPage() {
           {recipients.length === 0 ? (
             <div className="glass-panel rounded-2xl p-12 border border-[rgba(255,255,255,0.08)] text-center">
               <Users className="w-16 h-16 mx-auto mb-4 text-[#CED4DA] opacity-30" />
-              <h3 className="text-xl font-semibold text-white mb-2">No Recipients</h3>
-              <p className="text-[#CED4DA] mb-6">Add recipients to distribute weekly briefs</p>
+              <h3 className="text-xl font-semibold text-white mb-2">No recipients configured</h3>
+              <p className="text-[#CED4DA] mb-6">Add executives to receive automated briefings</p>
               <Button
-                onClick={() => setShowRecipientForm(true)}
+                onClick={() => setShowAddRecipientForm(true)}
                 className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -508,9 +603,9 @@ export default function ExecutiveBriefPage() {
                   className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]"
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
+                    <div>
                       <h4 className="font-semibold text-white mb-1">{recipient.name}</h4>
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2">
                         <Badge className={`${roleColors[recipient.role]} border text-xs`}>
                           {recipient.role}
                         </Badge>
@@ -519,15 +614,6 @@ export default function ExecutiveBriefPage() {
                         } text-xs`}>
                           {recipient.active ? 'Active' : 'Inactive'}
                         </Badge>
-                      </div>
-                      <div className="text-sm text-[#CED4DA] space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-3 h-3" strokeWidth={1.5} />
-                          <span className="truncate">{recipient.email}</span>
-                        </div>
-                        <div className="text-xs">
-                          Channel: {recipient.preferred_channel || 'email'}
-                        </div>
                       </div>
                     </div>
                     <Button
@@ -539,6 +625,17 @@ export default function ExecutiveBriefPage() {
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-[#CED4DA]">
+                      <Mail className="w-4 h-4" strokeWidth={1.5} />
+                      <span className="truncate">{recipient.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[#CED4DA]">
+                      {channelIcons[recipient.preferred_channel]}
+                      <span className="capitalize">{recipient.preferred_channel}</span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -547,10 +644,10 @@ export default function ExecutiveBriefPage() {
       </Tabs>
 
       {/* Add Recipient Dialog */}
-      <Dialog open={showRecipientForm} onOpenChange={setShowRecipientForm}>
+      <Dialog open={showAddRecipientForm} onOpenChange={setShowAddRecipientForm}>
         <DialogContent className="glass-panel-strong border-[rgba(255,255,255,0.1)] text-white max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-white">Add Recipient</DialogTitle>
+            <DialogTitle className="text-white">Add Executive Recipient</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
@@ -569,14 +666,17 @@ export default function ExecutiveBriefPage() {
                 type="email"
                 value={recipientForm.email}
                 onChange={(e) => setRecipientForm({...recipientForm, email: e.target.value})}
-                placeholder="john.smith@company.com"
+                placeholder="john@company.com"
                 className="glass-panel border-[rgba(255,255,255,0.08)] text-white placeholder:text-[#CED4DA]"
               />
             </div>
 
             <div>
               <Label className="text-white mb-2 block">Role</Label>
-              <Select value={recipientForm.role} onValueChange={(v) => setRecipientForm({...recipientForm, role: v})}>
+              <Select
+                value={recipientForm.role}
+                onValueChange={(value) => setRecipientForm({...recipientForm, role: value})}
+              >
                 <SelectTrigger className="glass-panel border-[rgba(255,255,255,0.08)] text-white">
                   <SelectValue />
                 </SelectTrigger>
@@ -592,7 +692,10 @@ export default function ExecutiveBriefPage() {
 
             <div>
               <Label className="text-white mb-2 block">Preferred Channel</Label>
-              <Select value={recipientForm.preferred_channel} onValueChange={(v) => setRecipientForm({...recipientForm, preferred_channel: v})}>
+              <Select
+                value={recipientForm.preferred_channel}
+                onValueChange={(value) => setRecipientForm({...recipientForm, preferred_channel: value})}
+              >
                 <SelectTrigger className="glass-panel border-[rgba(255,255,255,0.08)] text-white">
                   <SelectValue />
                 </SelectTrigger>
@@ -608,17 +711,17 @@ export default function ExecutiveBriefPage() {
           <div className="flex gap-3 pt-4 border-t border-[rgba(255,255,255,0.08)]">
             <Button
               variant="outline"
-              onClick={() => setShowRecipientForm(false)}
+              onClick={() => setShowAddRecipientForm(false)}
               className="flex-1 border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
             >
               Cancel
             </Button>
             <Button
-              onClick={() => createRecipientMutation.mutate(recipientForm)}
-              disabled={!recipientForm.name || !recipientForm.email || createRecipientMutation.isPending}
+              onClick={() => addRecipientMutation.mutate(recipientForm)}
+              disabled={!recipientForm.name || !recipientForm.email || addRecipientMutation.isPending}
               className="flex-1 bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
             >
-              {createRecipientMutation.isPending ? 'Adding...' : 'Add Recipient'}
+              {addRecipientMutation.isPending ? 'Adding...' : 'Add Recipient'}
             </Button>
           </div>
         </DialogContent>
