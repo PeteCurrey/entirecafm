@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   TrendingUp,
   AlertTriangle,
@@ -19,22 +20,36 @@ import {
   ArrowDown,
   Minus,
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  Bell,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import AlertRuleForm from "../components/alerts/AlertRuleForm";
+import AlertNotificationDropdown from "../components/alerts/AlertNotificationDropdown";
 
 // WebSocket connection state
 let ws = null;
 
 export default function AIDirectorPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const scrollPositionRef = useRef(0);
   const [user, setUser] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [wsConnected, setWsConnected] = useState(false);
+  const [showAlertsDialog, setShowAlertsDialog] = useState(false);
+  const [showNewAlertForm, setShowNewAlertForm] = useState(false);
 
   // Save scroll position before unmount
   useEffect(() => {
@@ -70,6 +85,35 @@ export default function AIDirectorPage() {
       setupWebSocket();
     }
   }, [user]);
+
+  const { data: alertRules = [] } = useQuery({
+    queryKey: ['alert-rules', user?.org_id],
+    queryFn: async () => {
+      if (!user?.org_id) return [];
+      return base44.entities.AlertRule.filter({ org_id: user.org_id });
+    },
+    enabled: !!user?.org_id,
+  });
+
+  const createAlertMutation = useMutation({
+    mutationFn: async (data) => {
+      return base44.entities.AlertRule.create({
+        ...data,
+        org_id: user.org_id
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['alert-rules']);
+      setShowNewAlertForm(false);
+    },
+  });
+
+  const deleteAlertMutation = useMutation({
+    mutationFn: (ruleId) => base44.entities.AlertRule.delete(ruleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['alert-rules']);
+    },
+  });
 
   const loadUser = async () => {
     try {
@@ -257,6 +301,15 @@ export default function AIDirectorPage() {
           <p className="text-[#CED4DA]">Real-time operational intelligence and financial metrics</p>
         </div>
         <div className="flex items-center gap-3">
+          {user?.org_id && <AlertNotificationDropdown orgId={user.org_id} />}
+          <Button
+            onClick={() => setShowAlertsDialog(true)}
+            variant="outline"
+            className="border-[rgba(255,255,255,0.08)] text-[#CED4DA] hover:bg-[rgba(255,255,255,0.04)]"
+          >
+            <Bell className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Alerts ({alertRules.filter(r => r.is_active).length})
+          </Button>
           {wsConnected && (
             <Badge className="bg-green-500/20 text-green-400 border-green-500/30 border">
               <Activity className="w-3 h-3 mr-1 animate-pulse" />
@@ -595,6 +648,100 @@ export default function AIDirectorPage() {
           </div>
         </div>
       </div>
+
+      {/* Alert Management Dialog */}
+      <Dialog open={showAlertsDialog} onOpenChange={setShowAlertsDialog}>
+        <DialogContent className="glass-panel-strong border-[rgba(255,255,255,0.1)] text-white max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Bell className="w-5 h-5 text-[#E1467C]" />
+              Alert Rules
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-[#CED4DA]">
+                Configure threshold-based alerts for key metrics
+              </p>
+              <Button
+                onClick={() => setShowNewAlertForm(true)}
+                size="sm"
+                className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Alert
+              </Button>
+            </div>
+
+            {showNewAlertForm && (
+              <div className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
+                <AlertRuleForm
+                  onSubmit={(data) => createAlertMutation.mutate(data)}
+                  onCancel={() => setShowNewAlertForm(false)}
+                />
+              </div>
+            )}
+
+            {alertRules.length === 0 ? (
+              <div className="text-center py-8">
+                <Bell className="w-12 h-12 mx-auto mb-3 text-[#CED4DA] opacity-30" />
+                <p className="text-[#CED4DA]">No alert rules configured</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {alertRules.map(rule => (
+                  <div
+                    key={rule.id}
+                    className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-white mb-1">
+                          {rule.type.replace('_', ' ')}
+                        </h4>
+                        <p className="text-sm text-[#CED4DA]">
+                          Alert when value {rule.operator} {rule.threshold_number}
+                          {rule.type === 'OVERDUE_INVOICES' && ' £'}
+                          {rule.type === 'UTILISATION' && '%'}
+                          {rule.type === 'ORG_HEALTH' && '/100'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className={`${
+                          rule.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {rule.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                        <Button
+                          onClick={() => deleteAlertMutation.mutate(rule.id)}
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-400 hover:bg-red-500/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-[#CED4DA]">
+                      <span>Channel: {rule.channel}</span>
+                      {rule.destination && (
+                        <span className="truncate">→ {rule.destination}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="pt-4 border-t border-[rgba(255,255,255,0.08)]">
+              <p className="text-xs text-[#CED4DA]">
+                ℹ️ Alerts are evaluated every 15 minutes. Duplicate alerts are suppressed for 60 minutes.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
