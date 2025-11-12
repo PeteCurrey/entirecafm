@@ -29,6 +29,7 @@ import TestRedis from './pages/TestRedis';
 import EngineerSimulator from './pages/EngineerSimulator';
 import ExecutiveBrief from './pages/ExecutiveBrief';
 import AIAssistant from './pages/AIAssistant';
+import SystemDocumentation from './pages/SystemDocumentation';
 import Layout from './Layout.jsx';
 
 
@@ -64,6 +65,7 @@ export const PAGES = {
     "EngineerSimulator": EngineerSimulator,
     "ExecutiveBrief": ExecutiveBrief,
     "AIAssistant": AIAssistant,
+    "SystemDocumentation": SystemDocumentation,
 }
 
 export const pagesConfig = {
