@@ -64,12 +64,13 @@ const navigationSections = [
       { title: "AI Marketing Dashboard", url: createPageUrl("AIMarketing"), icon: Megaphone, roles: ["admin"] },
       { title: "Executive Briefing", url: createPageUrl("ExecutiveBrief"), icon: FileText, roles: ["admin"] },
       { title: "AI Assistant", url: createPageUrl("AIAssistant"), icon: MessageCircle, roles: ["admin", "user"] },
+      { title: "System Documentation", url: createPageUrl("SystemDocumentation"), icon: FolderOpen, roles: ["admin"] },
     ]
   },
   {
-    title: "TESTING & DEV", // Changed title
+    title: "TESTING & DEV",
     items: [
-      { title: "Engineer Simulator", url: createPageUrl("EngineerSimulator"), icon: Navigation, roles: ["admin"] }, // New item
+      { title: "Engineer Simulator", url: createPageUrl("EngineerSimulator"), icon: Navigation, roles: ["admin"] },
       { title: "Test Redis Real-Time", url: createPageUrl("TestRedis"), icon: Bot, roles: ["admin"] },
     ]
   }
