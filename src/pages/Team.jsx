@@ -169,7 +169,7 @@ export default function TeamPage() {
               </div>
             </div>
             <div>
-              <div className="text-sm text-[#CED4DA] mb-1">Available (<50%)</div>
+              <div className="text-sm text-[#CED4DA] mb-1">Available (&lt;50%)</div>
               <div className="text-3xl font-bold text-green-400">
                 {displayEngineers.filter(e => e.utilisation_pct < 50).length}
               </div>
