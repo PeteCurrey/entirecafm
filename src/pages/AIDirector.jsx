@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -59,6 +58,7 @@ export default function AIDirectorPage() {
   const [showAlertsDialog, setShowAlertsDialog] = useState(false);
   const [showNewAlertForm, setShowNewAlertForm] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [revenueProjection, setRevenueProjection] = useState(null);
 
   // Save scroll position before unmount
   useEffect(() => {
@@ -104,6 +104,26 @@ export default function AIDirectorPage() {
     enabled: !!user?.org_id,
   });
 
+  // Fetch latest revenue projection
+  const { data: latestProjection } = useQuery({
+    queryKey: ['revenue-projection', user?.org_id],
+    queryFn: async () => {
+      if (!user?.org_id) return null;
+      const projections = await base44.entities.RevenueProjection.filter({ org_id: user.org_id });
+      if (projections.length === 0) return null;
+      return projections.sort((a, b) => 
+        new Date(b.date_generated) - new Date(a.date_generated)
+      )[0];
+    },
+    enabled: !!user?.org_id,
+  });
+
+  useEffect(() => {
+    if (latestProjection) {
+      setRevenueProjection(latestProjection);
+    }
+  }, [latestProjection]);
+
   const createAlertMutation = useMutation({
     mutationFn: async (data) => {
       return base44.entities.AlertRule.create({
@@ -146,10 +166,30 @@ export default function AIDirectorPage() {
         setDashboardData(result.data);
         setLastUpdated(new Date());
       }
+
+      // Also refresh revenue projection
+      queryClient.invalidateQueries(['revenue-projection']);
     } catch (error) {
       console.error("Error loading dashboard:", error);
     } finally {
       setIsLoadingDashboard(false);
+    }
+  };
+
+  const runRevenueSimulator = async () => {
+    if (!user?.org_id) return;
+    
+    try {
+      const result = await base44.functions.invoke('revenueSimulator', {
+        org_id: user.org_id
+      });
+      
+      if (result.data.success) {
+        queryClient.invalidateQueries(['revenue-projection']);
+        console.log('✅ Revenue forecast updated');
+      }
+    } catch (error) {
+      console.error("Error running revenue simulator:", error);
     }
   };
 
@@ -187,6 +227,11 @@ export default function AIDirectorPage() {
             console.log('📊 Dashboard update received via WebSocket');
             setDashboardData(message.data);
             setLastUpdated(new Date());
+          }
+          
+          if (message.type === 'revenue_forecast_available') {
+            console.log('💷 Revenue forecast update received');
+            queryClient.invalidateQueries(['revenue-projection']);
           }
         } catch (error) {
           console.error('WebSocket message parse error:', error);
@@ -362,6 +407,65 @@ export default function AIDirectorPage() {
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
+          {/* Revenue Forecast Cards */}
+          {revenueProjection && (
+            <>
+              <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-[#E1467C]" strokeWidth={1.5} />
+                Revenue Forecast
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div className={`glass-panel rounded-2xl p-6 border ${
+                  revenueProjection.risk_band === 'LOW' ? 'border-green-500/30' :
+                  revenueProjection.risk_band === 'MED' ? 'border-yellow-500/30' :
+                  'border-red-500/30'
+                }`}>
+                  <div className="text-sm text-[#CED4DA] mb-1">30-Day Projection</div>
+                  <div className={`text-3xl font-bold ${
+                    revenueProjection.risk_band === 'LOW' ? 'text-green-400' :
+                    revenueProjection.risk_band === 'MED' ? 'text-yellow-400' :
+                    'text-red-400'
+                  }`}>
+                    £{(revenueProjection.projection_30d || 0).toLocaleString()}
+                  </div>
+                  <div className="text-xs text-[#CED4DA] mt-1">{revenueProjection.risk_band} Risk</div>
+                </div>
+
+                <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+                  <div className="text-sm text-[#CED4DA] mb-1">90-Day Projection</div>
+                  <div className="text-3xl font-bold text-white">
+                    £{(revenueProjection.projection_90d || 0).toLocaleString()}
+                  </div>
+                  <div className="text-xs text-[#CED4DA] mt-1">
+                    Confirmed: £{(revenueProjection.confirmed_pipeline_value || 0).toLocaleString()}
+                  </div>
+                </div>
+
+                <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+                  <div className="text-sm text-[#CED4DA] mb-1">Expected Margin</div>
+                  <div className="text-3xl font-bold text-green-400">
+                    £{(revenueProjection.expected_margin || 0).toLocaleString()}
+                  </div>
+                  <div className="text-xs text-[#CED4DA] mt-1">AI-optimised</div>
+                </div>
+
+                <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+                  <div className="text-sm text-[#CED4DA] mb-1">Collection Probability</div>
+                  <div className={`text-3xl font-bold ${
+                    (revenueProjection.assumptions_json?.collection_ratio || 0) >= 0.9 ? 'text-green-400' :
+                    (revenueProjection.assumptions_json?.collection_ratio || 0) >= 0.7 ? 'text-yellow-400' :
+                    'text-red-400'
+                  }`}>
+                    {Math.round((revenueProjection.assumptions_json?.collection_ratio || 0) * 100)}%
+                  </div>
+                  <div className="text-xs text-[#CED4DA] mt-1">
+                    Expected: £{(revenueProjection.expected_collections || 0).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* 5 Core Metric Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* 1. ORG HEALTH */}
