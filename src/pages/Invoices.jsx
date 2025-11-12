@@ -7,7 +7,8 @@ import {
   DollarSign,
   Search,
   Download,
-  ArrowLeft
+  ArrowLeft,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,18 +25,18 @@ import { format } from "date-fns";
 export default function InvoicesPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const filterParam = searchParams.get('filter'); // 'overdue' or undefined
+  const statusParam = searchParams.get('status'); // 'overdue' or undefined
   const fromPage = searchParams.get('from'); // 'director' or undefined
   
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState(filterParam === 'overdue' ? 'overdue' : 'all');
+  const [statusFilter, setStatusFilter] = useState(statusParam === 'overdue' ? 'overdue' : 'all');
 
   // Update filter when URL param changes
   useEffect(() => {
-    if (filterParam === 'overdue') {
+    if (statusParam === 'overdue') {
       setStatusFilter('overdue');
     }
-  }, [filterParam]);
+  }, [statusParam]);
 
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ['invoices'],
@@ -46,6 +47,10 @@ export default function InvoicesPage() {
     queryKey: ['clients'],
     queryFn: () => base44.entities.Client.list(),
   });
+
+  const handleClearFilters = () => {
+    navigate(createPageUrl("Invoices"));
+  };
 
   const filteredInvoices = invoices.filter(inv => {
     const matchesSearch = !searchTerm || 
@@ -90,7 +95,7 @@ export default function InvoicesPage() {
             className="mb-4 text-[#CED4DA] hover:text-white hover:bg-[rgba(255,255,255,0.04)]"
           >
             <ArrowLeft className="w-4 h-4 mr-2" strokeWidth={1.5} />
-            Return to AI Director Dashboard
+            AI Director
           </Button>
         )}
 
@@ -98,7 +103,7 @@ export default function InvoicesPage() {
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Invoices</h1>
             <p className="text-[#CED4DA]">
-              {filterParam === 'overdue' ? 'Overdue invoices requiring collection' : 'Manage and track client invoices'}
+              {statusParam === 'overdue' ? 'Overdue invoices requiring collection' : 'Manage and track client invoices'}
             </p>
           </div>
           <Button
@@ -109,6 +114,21 @@ export default function InvoicesPage() {
             Export
           </Button>
         </div>
+
+        {/* Active Filter Pills */}
+        {statusParam && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {statusParam === 'overdue' && (
+              <Badge className="bg-red-500/20 text-red-400 border-red-500/30 border flex items-center gap-2">
+                Status: Overdue
+                <X 
+                  className="w-3 h-3 cursor-pointer hover:bg-red-500/30 rounded-full" 
+                  onClick={handleClearFilters}
+                />
+              </Badge>
+            )}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -140,7 +160,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Summary Cards */}
-      {filterParam === 'overdue' && (
+      {statusParam === 'overdue' && (
         <div className="glass-panel rounded-2xl p-6 border border-red-500/30 bg-red-500/5">
           <div className="flex items-center justify-between">
             <div>
@@ -201,7 +221,7 @@ export default function InvoicesPage() {
             <DollarSign className="w-16 h-16 mx-auto mb-4 text-[#CED4DA] opacity-30" />
             <h3 className="text-xl font-semibold text-white mb-2">No invoices found</h3>
             <p className="text-[#CED4DA]">
-              {filterParam === 'overdue' ? 'No overdue invoices - excellent!' : 'Invoices will appear here'}
+              {statusParam === 'overdue' ? 'No overdue invoices - excellent!' : 'Invoices will appear here'}
             </p>
           </div>
         ) : (

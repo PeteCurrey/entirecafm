@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import {
   Plus,
   Search,
@@ -8,7 +10,10 @@ import {
   Mail,
   Phone,
   MapPin,
-  CheckCircle
+  CheckCircle,
+  ArrowLeft,
+  X,
+  TrendingDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +28,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function ClientsPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  const clientIdParam = searchParams.get('id'); // specific client ID
+  const tabParam = searchParams.get('tab'); // 'health' tab
+  const fromPage = searchParams.get('from'); // 'director' or undefined
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -71,6 +83,13 @@ export default function ClientsPage() {
     },
   });
 
+  const handleClearFilters = () => {
+    navigate(createPageUrl("Clients"));
+  };
+
+  // Highlight specific client if ID is provided
+  const highlightedClientId = clientIdParam;
+
   const filteredClients = clients.filter(client => {
     const matchesSearch = !searchTerm || 
       client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -78,6 +97,15 @@ export default function ClientsPage() {
     
     return matchesSearch && client.status === 'active';
   });
+
+  // Sort to put highlighted client first
+  if (highlightedClientId) {
+    filteredClients.sort((a, b) => {
+      if (a.id === highlightedClientId) return -1;
+      if (b.id === highlightedClientId) return 1;
+      return 0;
+    });
+  }
 
   const statusColors = {
     active: 'bg-green-500/20 text-green-200 border-green-300/30',
@@ -89,10 +117,24 @@ export default function ClientsPage() {
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+        {/* Back Link - Show if coming from director dashboard */}
+        {fromPage === 'director' && (
+          <Button
+            variant="ghost"
+            onClick={() => navigate(createPageUrl("AIDirector"))}
+            className="mb-4 text-[#CED4DA] hover:text-white hover:bg-[rgba(255,255,255,0.04)]"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            AI Director
+          </Button>
+        )}
+
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Clients</h1>
-            <p className="text-[#CED4DA]">Manage your client organizations</p>
+            <p className="text-[#CED4DA]">
+              {tabParam === 'health' ? 'Client health and relationship monitoring' : 'Manage your client organizations'}
+            </p>
           </div>
           <Button
             onClick={() => setShowNewClientForm(true)}
@@ -102,6 +144,27 @@ export default function ClientsPage() {
             New Client
           </Button>
         </div>
+
+        {/* Active Filter Pills */}
+        {(clientIdParam || tabParam) && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {clientIdParam && (
+              <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 border flex items-center gap-2">
+                Viewing: {clients.find(c => c.id === clientIdParam)?.name || 'Client'}
+                <X 
+                  className="w-3 h-3 cursor-pointer hover:bg-purple-500/30 rounded-full" 
+                  onClick={handleClearFilters}
+                />
+              </Badge>
+            )}
+            {tabParam === 'health' && (
+              <Badge className="bg-red-500/20 text-red-400 border-red-500/30 border flex items-center gap-2">
+                <TrendingDown className="w-3 h-3" />
+                Health Monitoring
+              </Badge>
+            )}
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative">
@@ -158,11 +221,16 @@ export default function ClientsPage() {
         ) : (
           filteredClients.map((client) => {
             const clientSites = sites.filter(s => s.client_id === client.id);
+            const isHighlighted = client.id === highlightedClientId;
             
             return (
               <div
                 key={client.id}
-                className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)] transition-all cursor-pointer"
+                className={`glass-panel rounded-2xl p-6 border transition-all cursor-pointer ${
+                  isHighlighted 
+                    ? 'border-[#E1467C] shadow-lg shadow-[#E1467C]/20' 
+                    : 'border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)]'
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -176,6 +244,11 @@ export default function ClientsPage() {
                       </Badge>
                     </div>
                   </div>
+                  {isHighlighted && tabParam === 'health' && (
+                    <Badge className="bg-red-500/20 text-red-400 border-red-500/30 border">
+                      At Risk
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="space-y-2 text-sm text-[#CED4DA] mb-4">

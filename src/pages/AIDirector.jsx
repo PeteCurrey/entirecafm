@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -29,11 +29,30 @@ let ws = null;
 
 export default function AIDirectorPage() {
   const navigate = useNavigate();
+  const scrollPositionRef = useRef(0);
   const [user, setUser] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [wsConnected, setWsConnected] = useState(false);
+
+  // Save scroll position before unmount
+  useEffect(() => {
+    const handleScroll = () => {
+      scrollPositionRef.current = window.scrollY;
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Restore scroll position when returning
+  useEffect(() => {
+    const savedPosition = sessionStorage.getItem('directorScrollPosition');
+    if (savedPosition) {
+      window.scrollTo(0, parseInt(savedPosition));
+      sessionStorage.removeItem('directorScrollPosition');
+    }
+  }, []);
 
   useEffect(() => {
     loadUser();
@@ -143,6 +162,32 @@ export default function AIDirectorPage() {
     }
   };
 
+  // Navigation handlers with scroll position preservation
+  const handleNavigate = (path) => {
+    sessionStorage.setItem('directorScrollPosition', scrollPositionRef.current.toString());
+    navigate(path);
+  };
+
+  const handleSLARiskClick = () => {
+    handleNavigate(`${createPageUrl("Jobs")}?filter=sla_risk&sort=due_at_asc&from=director`);
+  };
+
+  const handleJobClick = (jobId) => {
+    handleNavigate(`${createPageUrl("JobDetail")}?id=${jobId}&from=director`);
+  };
+
+  const handleUtilisationClick = () => {
+    handleNavigate(`${createPageUrl("Team")}?sort=utilisation_desc&window=48h&from=director`);
+  };
+
+  const handleFinancialsClick = () => {
+    handleNavigate(`${createPageUrl("Invoices")}?status=overdue&from=director`);
+  };
+
+  const handleClientClick = (clientId) => {
+    handleNavigate(`${createPageUrl("Clients")}?id=${clientId}&tab=health&from=director`);
+  };
+
   const getHealthColor = (score) => {
     if (score >= 80) return { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/30', label: 'HEALTHY' };
     if (score >= 60) return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30', label: 'NEEDS ATTENTION' };
@@ -166,23 +211,6 @@ export default function AIDirectorPage() {
     if (overdueValue === 0) return { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/30', label: 'CURRENT' };
     if (overdueValue < 10000) return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30', label: 'REVIEW' };
     return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', label: 'COLLECTION REQUIRED' };
-  };
-
-  // Navigation handlers
-  const handleJobClick = (jobId) => {
-    navigate(`${createPageUrl("JobDetail")}?id=${jobId}&from=director`);
-  };
-
-  const handleClientClick = (clientId) => {
-    navigate(`${createPageUrl("Clients")}?id=${clientId}&from=director`);
-  };
-
-  const handleFinancialsClick = () => {
-    navigate(`${createPageUrl("Invoices")}?filter=overdue&from=director`);
-  };
-
-  const handleUtilisationClick = () => {
-    navigate(`${createPageUrl("Team")}?sort=utilisation&from=director`);
   };
 
   if (!dashboardData && !isLoadingDashboard) {
@@ -295,10 +323,8 @@ export default function AIDirectorPage() {
 
         {/* 2. SLA RISK - Clickable */}
         <div 
-          onClick={() => dashboardData?.at_risk_jobs?.length > 0 && handleJobClick(dashboardData.at_risk_jobs[0].id)}
-          className={`glass-panel rounded-2xl p-6 border ${riskColors.border} transition-all hover:border-[rgba(255,255,255,0.15)] ${
-            dashboardData?.at_risk_jobs?.length > 0 ? 'cursor-pointer' : ''
-          }`}
+          onClick={handleSLARiskClick}
+          className={`glass-panel rounded-2xl p-6 border ${riskColors.border} transition-all hover:border-[rgba(255,255,255,0.15)] cursor-pointer`}
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -335,6 +361,10 @@ export default function AIDirectorPage() {
                 </Badge>
               </div>
             )) || <p className="text-xs text-[#CED4DA]">No jobs at risk</p>}
+          </div>
+          <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.08)] flex items-center justify-between text-xs text-[#CED4DA]">
+            <span>View all at-risk jobs</span>
+            <ChevronRight className="w-4 h-4" />
           </div>
         </div>
 
