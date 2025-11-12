@@ -11,7 +11,8 @@ import {
   Clock,
   FileText,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,12 @@ export default function QuotesPage() {
     queryFn: () => base44.entities.LeadEvent.list(),
   });
 
+  // Fetch quote optimisations
+  const { data: optimisations = [] } = useQuery({
+    queryKey: ['quote-optimisations'],
+    queryFn: () => base44.entities.QuoteOptimisation.list(),
+  });
+
   const filteredQuotes = quotes.filter(quote => {
     const matchesSearch = !searchTerm || 
       quote.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -88,6 +95,11 @@ export default function QuotesPage() {
   const getWinPrediction = (quoteId) => {
     const event = leadEvents.find(e => e.quote_id === quoteId);
     return event?.predicted_win_prob;
+  };
+
+  // Get optimization for quote
+  const getOptimisation = (quoteId) => {
+    return optimisations.find(o => o.quote_id === quoteId);
   };
 
   const getWinBadge = (probability) => {
@@ -228,6 +240,7 @@ export default function QuotesPage() {
             const site = sites.find(s => s.id === quote.site_id);
             const StatusIcon = statusIcons[quote.status];
             const winProb = getWinPrediction(quote.id);
+            const optimisation = getOptimisation(quote.id);
             
             return (
               <div
@@ -242,6 +255,12 @@ export default function QuotesPage() {
                         <span className="text-sm text-[#CED4DA] opacity-50">#{quote.quote_number}</span>
                       )}
                       {winProb && getWinBadge(winProb)}
+                      {optimisation && (
+                        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 border text-xs" title={`AI recommends ${optimisation.recommended_markup_pct?.toFixed(1)}% markup for ${Math.round(optimisation.predicted_accept_prob * 100)}% acceptance`}>
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          Optimised (+£{optimisation.delta_margin?.toFixed(0)})
+                        </Badge>
+                      )}
                     </div>
                     {quote.description && (
                       <p className="text-[#CED4DA] mb-3 line-clamp-2">{quote.description}</p>

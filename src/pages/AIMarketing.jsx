@@ -15,11 +15,21 @@ import {
   ExternalLink,
   AlertCircle,
   CheckCircle,
-  TrendingDown
+  TrendingDown,
+  Sliders,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import BudgetAllocator from "../components/marketing/BudgetAllocator";
+import QuoteOptimiserPanel from "../components/marketing/QuoteOptimiserPanel";
 
 // WebSocket
 let ws = null;
@@ -31,6 +41,7 @@ export default function AIMarketingPage() {
   const [isComputing, setIsComputing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [wsConnected, setWsConnected] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
     loadUser();
@@ -160,6 +171,35 @@ export default function AIMarketingPage() {
     queryFn: () => base44.entities.Client.list(),
   });
 
+  const { data: allocations = [] } = useQuery({
+    queryKey: ['campaign-allocations', user?.org_id],
+    queryFn: async () => {
+      if (!user?.org_id) return [];
+      return base44.entities.CampaignAllocation.filter({ 
+        org_id: user.org_id,
+        status: 'PENDING'
+      });
+    },
+    enabled: !!user?.org_id,
+  });
+
+  const { data: optimisations = [] } = useQuery({
+    queryKey: ['quote-optimisations', user?.org_id],
+    queryFn: async () => {
+      if (!user?.org_id) return [];
+      return base44.entities.QuoteOptimisation.filter({ 
+        org_id: user.org_id,
+        applied: false
+      });
+    },
+    enabled: !!user?.org_id,
+  });
+
+  const { data: quotes = [] } = useQuery({
+    queryKey: ['quotes'],
+    queryFn: () => base44.entities.Quote.list(),
+  });
+
   // Compute metrics
   const computeMetrics = async () => {
     if (!user?.org_id) return;
@@ -176,6 +216,42 @@ export default function AIMarketingPage() {
       setLastUpdated(new Date());
     } catch (error) {
       console.error("Error computing metrics:", error);
+    } finally {
+      setIsComputing(false);
+    }
+  };
+
+  const runBudgetAllocation = async () => {
+    if (!user?.org_id) return;
+    
+    setIsComputing(true);
+    try {
+      await base44.functions.invoke('marketing.allocateBudget', {
+        org_id: user.org_id
+      });
+
+      queryClient.invalidateQueries(['campaign-allocations']);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error("Error allocating budget:", error);
+    } finally {
+      setIsComputing(false);
+    }
+  };
+
+  const runQuoteOptimisation = async () => {
+    if (!user?.org_id) return;
+    
+    setIsComputing(true);
+    try {
+      await base44.functions.invoke('quoteOptimiser', {
+        org_id: user.org_id
+      });
+
+      queryClient.invalidateQueries(['quote-optimisations']);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error("Error optimising quotes:", error);
     } finally {
       setIsComputing(false);
     }
@@ -287,6 +363,12 @@ export default function AIMarketingPage() {
     return null;
   };
 
+  // Calculate optimization metrics
+  const totalMarginGain = optimisations.reduce((sum, o) => sum + (o.delta_margin || 0), 0);
+  const avgAcceptProb = optimisations.length > 0
+    ? optimisations.reduce((sum, o) => sum + (o.predicted_accept_prob || 0), 0) / optimisations.length
+    : 0;
+
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
@@ -326,7 +408,27 @@ export default function AIMarketingPage() {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Tabs: Dashboard | Optimisation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="glass-panel border-[rgba(255,255,255,0.08)]">
+          <TabsTrigger 
+            value="dashboard"
+            className="data-[state=active]:bg-[#E1467C] data-[state=active]:text-white"
+          >
+            <Activity className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger 
+            value="optimisation"
+            className="data-[state=active]:bg-[#E1467C] data-[state=active]:text-white"
+          >
+            <Sliders className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Optimisation
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" className="space-y-6 mt-6">
+          {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {/* Conversion Rate */}
         <div className={`glass-panel rounded-2xl p-6 border ${
@@ -487,8 +589,8 @@ export default function AIMarketingPage() {
         </div>
       </div>
 
-      {/* Lead Distribution Pie */}
-      {leadDistribution.length > 0 && (
+          {/* Lead Distribution Pie */}
+          {leadDistribution.length > 0 && (
         <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
           <h3 className="text-lg font-bold text-white mb-4">Lead Distribution by Source</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -510,11 +612,11 @@ export default function AIMarketingPage() {
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-        </div>
-      )}
+          </div>
+          )}
 
-      {/* Next Best Actions Table */}
-      <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+          {/* Next Best Actions Table */}
+          <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
         <h2 className="text-xl font-bold text-white mb-4">Next Best Actions</h2>
         {actions.length === 0 ? (
           <div className="text-center py-12">
@@ -580,7 +682,96 @@ export default function AIMarketingPage() {
             })}
           </div>
         )}
-      </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="optimisation" className="space-y-6 mt-6">
+          {/* Optimization Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+              <div className="text-sm text-[#CED4DA] mb-1">Budget Changes Pending</div>
+              <div className="text-3xl font-bold text-white">{allocations.length}</div>
+              <div className="text-xs text-[#CED4DA] mt-1">
+                {allocations.filter(a => a.change_pct > 0).length} increases, {allocations.filter(a => a.change_pct < 0).length} decreases
+              </div>
+            </div>
+
+            <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+              <div className="text-sm text-[#CED4DA] mb-1">Quotes Optimised</div>
+              <div className="text-3xl font-bold text-white">{optimisations.length}</div>
+              <div className="text-xs text-[#CED4DA] mt-1">
+                Avg {Math.round(avgAcceptProb * 100)}% accept probability
+              </div>
+            </div>
+
+            <div className="glass-panel rounded-2xl p-6 border border-green-500/30 bg-green-500/5">
+              <div className="text-sm text-[#CED4DA] mb-1">Expected Margin Gain</div>
+              <div className="text-3xl font-bold text-green-400">
+                +£{totalMarginGain.toFixed(0)}
+              </div>
+              <div className="text-xs text-[#CED4DA] mt-1">
+                If all recommendations applied
+              </div>
+            </div>
+          </div>
+
+          {/* Campaign Budget Allocator */}
+          <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Sliders className="w-5 h-5 text-[#E1467C]" strokeWidth={1.5} />
+                Campaign Budget Allocator
+              </h3>
+              <Button
+                onClick={runBudgetAllocation}
+                disabled={isComputing}
+                size="sm"
+                variant="outline"
+                className="border-[rgba(255,255,255,0.08)] text-[#CED4DA] hover:bg-[rgba(255,255,255,0.04)]"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isComputing ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+                Recalculate Allocation
+              </Button>
+            </div>
+            <BudgetAllocator
+              allocations={allocations}
+              sources={sources}
+              onRefresh={() => {
+                queryClient.invalidateQueries(['campaign-allocations']);
+                queryClient.invalidateQueries(['lead-sources']);
+              }}
+            />
+          </div>
+
+          {/* Quote Optimiser */}
+          <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[#E1467C]" strokeWidth={1.5} />
+                Quote Markup Optimiser
+              </h3>
+              <Button
+                onClick={runQuoteOptimisation}
+                disabled={isComputing}
+                size="sm"
+                variant="outline"
+                className="border-[rgba(255,255,255,0.08)] text-[#CED4DA] hover:bg-[rgba(255,255,255,0.04)]"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isComputing ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+                Optimise Quotes
+              </Button>
+            </div>
+            <QuoteOptimiserPanel
+              optimisations={optimisations}
+              quotes={quotes}
+              onRefresh={() => {
+                queryClient.invalidateQueries(['quote-optimisations']);
+                queryClient.invalidateQueries(['quotes']);
+              }}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
