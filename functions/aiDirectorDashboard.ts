@@ -104,43 +104,37 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Fetched: ${jobs.length} jobs, ${engineers.length} engineers, ${quotes.length} quotes, ${invoices.length} invoices`);
 
-    // ===== 1. JOBS ANALYSIS =====
-    
+    // ===== AI SCORING ENGINE =====
+
+    // ---------- SLA RISK CALCULATION ----------
     const activeJobs = jobs.filter(j => 
       j.status !== 'completed' && j.status !== 'cancelled'
     );
 
     const completedJobs = jobs.filter(j => j.status === 'completed');
 
-    // Calculate SLA risk for active jobs
+    // Calculate SLA risk for all jobs
     const jobsWithRisk = activeJobs.map(job => ({
       ...job,
       sla_risk_pct: calculateSLARisk(job, now)
     }));
 
-    const atRiskJobs = jobsWithRisk
-      .filter(j => j.sla_risk_pct > 75)
-      .sort((a, b) => b.sla_risk_pct - a.sla_risk_pct)
-      .slice(0, 10)
-      .map(j => ({
-        id: j.id,
-        job_number: j.job_number,
-        title: j.title,
-        status: j.status,
-        priority: j.priority,
-        sla_risk_pct: Math.round(j.sla_risk_pct),
-        sla_due_date: j.sla_due_date,
-        client_id: j.client_id,
-        assigned_engineer_id: j.assigned_engineer_id
-      }));
-
+    const criticalJobs = jobs.filter(j => j.priority === "critical");
     const slaBreaches = jobsWithRisk.filter(j => j.sla_risk_pct >= 100).length;
+    const highRiskJobs = jobsWithRisk.filter(j => j.sla_risk_pct > 75);
 
-    // ===== 2. ENGINEER UTILISATION =====
-    
-    const engineersInOrg = engineers.filter(u => 
-      u.role === 'user' // Assuming 'user' role is for engineers
+    // SLA risk score (0-100, lower = worse)
+    const slaRiskScore = Math.max(
+      0,
+      100 -
+        ((slaBreaches * 12) +
+         (highRiskJobs.filter(j => j.priority === 'critical').length * 6))
     );
+
+    console.log(`📊 SLA Risk Score: ${slaRiskScore} (${slaBreaches} breaches, ${highRiskJobs.length} high-risk)`);
+
+    // ---------- UTILISATION PREDICTION (48H) ----------
+    const engineersInOrg = engineers.filter(u => u.role === 'user'); // Engineers only
 
     const jobsNext48h = activeJobs.filter(j => {
       if (!j.scheduled_date) return false;
@@ -148,53 +142,51 @@ Deno.serve(async (req) => {
       return scheduledDate >= now && scheduledDate <= next48h;
     });
 
+    // Utilisation: jobs scheduled / total capacity (8h/day * 2 days per engineer)
+    const maxCapacity48h = engineersInOrg.length * 8 * 2; // 8 jobs per day per engineer
+    const utilisationPct = Math.round(
+      maxCapacity48h > 0 ? (jobsNext48h.length / maxCapacity48h) * 100 : 0
+    );
+
+    console.log(`📊 Utilisation: ${utilisationPct}% (${jobsNext48h.length} jobs / ${maxCapacity48h} capacity)`);
+
+    // Engineer utilisation breakdown
     const engineersUtilisation = engineersInOrg.map(engineer => {
       const assignedJobsNext48h = jobsNext48h.filter(j => 
         j.assigned_engineer_id === engineer.id
       ).length;
       
-      // Assume 8 jobs per day capacity, 16 for 48h
-      const maxCapacity = 16;
-      const utilisationPct = Math.min((assignedJobsNext48h / maxCapacity) * 100, 100);
+      const maxCapacity = 16; // 8 jobs/day * 2 days
+      const engineerUtilisationPct = Math.min((assignedJobsNext48h / maxCapacity) * 100, 100);
 
       return {
         engineer_id: engineer.id,
         engineer_name: engineer.full_name,
         jobs_next_48h: assignedJobsNext48h,
-        capacity_pct: Math.round(utilisationPct),
-        status: utilisationPct > 90 ? 'overloaded' : utilisationPct > 70 ? 'busy' : 'available'
+        capacity_pct: Math.round(engineerUtilisationPct),
+        status: engineerUtilisationPct > 90 ? 'overloaded' : 
+                engineerUtilisationPct > 70 ? 'busy' : 'available'
       };
     }).sort((a, b) => b.capacity_pct - a.capacity_pct);
 
-    const avgUtilisation = engineersUtilisation.length > 0
-      ? Math.round(engineersUtilisation.reduce((sum, e) => sum + e.capacity_pct, 0) / engineersUtilisation.length)
-      : 0;
-
-    // ===== 3. FINANCIAL METRICS =====
-    
-    const pendingQuotes = quotes.filter(q => 
-      ['draft', 'sent'].includes(q.status)
-    );
-
-    const approvedQuotes = quotes.filter(q => 
-      ['client_approved', 'ready_to_schedule'].includes(q.status)
-    );
-
+    // ---------- FINANCIAL RISK SCORE ----------
     const overdueInvoices = invoices.filter(inv => {
       if (inv.status === 'paid') return false;
       if (!inv.due_date) return false;
       return new Date(inv.due_date) < now;
     });
 
-    const totalPendingQuoteValue = pendingQuotes.reduce((sum, q) => sum + (q.total || 0), 0);
-    const totalApprovedUnbilledValue = approvedQuotes.reduce((sum, q) => sum + (q.total || 0), 0);
-    const totalOverdueInvoiceValue = overdueInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-    const totalOutstandingInvoices = invoices
-      .filter(inv => inv.status !== 'paid')
-      .reduce((sum, inv) => sum + (inv.total || 0), 0);
+    const overdueValue = overdueInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
 
-    // ===== 4. CLIENT HEALTH SCORES =====
-    
+    let financialRisk = 100; // Start green
+    if (overdueValue > 5000) financialRisk -= 10;
+    if (overdueValue > 15000) financialRisk -= 20;
+    if (overdueValue > 30000) financialRisk -= 30;
+    if (overdueValue > 50000) financialRisk -= 40;
+
+    console.log(`💰 Financial Risk: ${financialRisk} (£${overdueValue.toFixed(2)} overdue)`);
+
+    // ---------- CLIENT HEALTH SCORE ----------
     const clientHealthData = clients.map(client => {
       const clientJobs = jobs.filter(j => j.client_id === client.id);
       const clientInvoices = invoices.filter(inv => inv.client_id === client.id);
@@ -213,8 +205,9 @@ Deno.serve(async (req) => {
 
       const oldQuotesCount = clientQuotes.filter(q => {
         if (q.status !== 'sent') return false;
-        if (!q.sent_date) return false;
-        const daysSinceSent = (now - new Date(q.sent_date)) / (1000 * 60 * 60 * 24);
+        if (!q.sent_date && !q.created_date) return false;
+        const sentDate = q.sent_date ? new Date(q.sent_date) : new Date(q.created_date);
+        const daysSinceSent = (now - sentDate) / (1000 * 60 * 60 * 24);
         return daysSinceSent > 7;
       }).length;
 
@@ -246,25 +239,58 @@ Deno.serve(async (req) => {
     }).sort((a, b) => a.health_score - b.health_score);
 
     const unhealthyClients = clientHealthData.filter(c => c.health_score < 60);
+    const atRiskClients = clientHealthData.filter(c => c.health_score < 80 && c.health_score >= 60);
 
-    // ===== 5. ORG HEALTH SCORE =====
-    
-    let orgHealthScore = 100;
-    
-    // Penalties
-    orgHealthScore -= Math.min(slaBreaches * 5, 30);
-    orgHealthScore -= Math.min(overdueInvoices.length * 3, 20);
-    orgHealthScore -= Math.min(unhealthyClients.length * 5, 20);
-    
-    // Bonus for good utilisation
-    if (avgUtilisation >= 60 && avgUtilisation <= 85) {
-      orgHealthScore += 10;
-    }
+    const clientHealthScore = Math.max(0, 100 - (unhealthyClients.length * 8));
 
-    orgHealthScore = Math.max(Math.min(orgHealthScore, 100), 0);
+    console.log(`👥 Client Health: ${clientHealthScore} (${unhealthyClients.length} unhealthy, ${atRiskClients.length} at-risk)`);
 
-    // ===== 6. FORECASTS =====
-    
+    // ---------- ORG HEALTH SCORE (WEIGHTED AVERAGE) ----------
+    const orgHealthScore = Math.round(
+      (slaRiskScore * 0.35) +           // 35% weight on SLA performance
+      ((100 - utilisationPct) * 0.20) + // 20% weight on capacity availability (inverse of utilisation)
+      (financialRisk * 0.25) +          // 25% weight on financial health
+      (clientHealthScore * 0.20)        // 20% weight on client relationships
+    );
+
+    console.log(`🏥 ORG HEALTH SCORE: ${orgHealthScore}/100`);
+    console.log(`   - SLA Risk: ${slaRiskScore} (35% weight)`);
+    console.log(`   - Capacity: ${100 - utilisationPct} (20% weight)`);
+    console.log(`   - Financial: ${financialRisk} (25% weight)`);
+    console.log(`   - Client Health: ${clientHealthScore} (20% weight)`);
+
+    // ---------- AT-RISK JOBS MODEL ----------
+    const atRiskJobs = jobsWithRisk
+      .map(j => ({
+        id: j.id,
+        job_number: j.job_number,
+        title: j.title,
+        status: j.status,
+        priority: j.priority || 'normal',
+        sla_risk_pct: Math.round(j.sla_risk_pct),
+        sla_due_date: j.sla_due_date,
+        due_in_minutes: j.sla_due_date ? 
+          Math.round((new Date(j.sla_due_date) - now) / 60000) : null,
+        client_id: j.client_id,
+        assigned_engineer_id: j.assigned_engineer_id
+      }))
+      .filter(j => j.sla_risk_pct > 50) // Only jobs with >50% risk
+      .sort((a, b) => b.sla_risk_pct - a.sla_risk_pct)
+      .slice(0, 10); // Top 10
+
+    console.log(`⚠️ At-Risk Jobs: ${atRiskJobs.length} (showing top 10)`);
+
+    // ===== FINANCIAL METRICS =====
+    const approvedQuotes = quotes.filter(q => 
+      ['client_approved', 'approved', 'ready_to_schedule'].includes(q.status)
+    );
+
+    const totalApprovedUnbilledValue = approvedQuotes.reduce((sum, q) => sum + (q.total || 0), 0);
+    const totalOutstandingInvoices = invoices
+      .filter(inv => inv.status !== 'paid')
+      .reduce((sum, inv) => sum + (inv.total || 0), 0);
+
+    // ===== FORECASTS =====
     const jobsNext7d = activeJobs.filter(j => {
       if (!j.scheduled_date) return false;
       const scheduledDate = new Date(j.scheduled_date);
@@ -279,74 +305,89 @@ Deno.serve(async (req) => {
       .reduce((sum, q) => sum + (q.total || 0), 0);
 
     const capacityNext48h = {
-      total_capacity: engineersInOrg.length * 16, // 8 jobs per day per engineer
+      total_capacity: maxCapacity48h,
       allocated_jobs: jobsNext48h.length,
-      utilisation_pct: Math.round((jobsNext48h.length / (engineersInOrg.length * 16)) * 100),
-      available_slots: Math.max((engineersInOrg.length * 16) - jobsNext48h.length, 0)
+      utilisation_pct: utilisationPct,
+      available_slots: Math.max(maxCapacity48h - jobsNext48h.length, 0)
     };
 
-    // ===== 7. PREPARE RESPONSE =====
-    
+    // ===== PREPARE RESPONSE =====
     const dashboardData = {
       org_id,
       generated_at: now.toISOString(),
-      org_health_score: Math.round(orgHealthScore),
+      org_health_score: orgHealthScore,
       summary: {
         active_jobs: activeJobs.length,
         completed_jobs: completedJobs.length,
         sla_breaches: slaBreaches,
         at_risk_jobs: atRiskJobs.length,
-        avg_engineer_utilisation: avgUtilisation
+        avg_engineer_utilisation: utilisationPct,
+        sla_risk_score: slaRiskScore
       },
       engineers_utilisation: engineersUtilisation.slice(0, 10),
       at_risk_jobs: atRiskJobs,
       client_health: {
         total_clients: clients.length,
         unhealthy_clients: unhealthyClients.length,
+        at_risk_clients: atRiskClients.length,
+        client_health_score: clientHealthScore,
         top_risk_clients: unhealthyClients.slice(0, 5)
       },
       financials: {
         outstanding_invoices: {
           total_value: Math.round(totalOutstandingInvoices * 100) / 100,
-          overdue_value: Math.round(totalOverdueInvoiceValue * 100) / 100,
+          overdue_value: Math.round(overdueValue * 100) / 100,
           overdue_count: overdueInvoices.length
         },
         unbilled_quotes: {
-          pending_approval: Math.round(totalPendingQuoteValue * 100) / 100,
           approved_unbilled: Math.round(totalApprovedUnbilledValue * 100) / 100
         },
-        total_at_risk: Math.round((totalOverdueInvoiceValue + totalApprovedUnbilledValue) * 100) / 100
+        total_at_risk: Math.round((overdueValue + totalApprovedUnbilledValue) * 100) / 100,
+        financial_risk_score: financialRisk
       },
       forecast_summary: {
         next_48h_capacity: capacityNext48h,
         next_7d_revenue_projection: Math.round(next7dRevenueProjection * 100) / 100,
         next_7d_scheduled_jobs: jobsNext7d.length
+      },
+      scoring_breakdown: {
+        sla_risk_score: slaRiskScore,
+        utilisation_score: 100 - utilisationPct,
+        financial_risk_score: financialRisk,
+        client_health_score: clientHealthScore,
+        org_health_score: orgHealthScore
       }
     };
 
-    // ===== 8. PUBLISH TO REDIS =====
-    
+    // ===== PUBLISH TO REDIS =====
     await publishToRedis(`director.org.${org_id}`, {
       type: 'director_dashboard_update',
       data: dashboardData,
       timestamp: now.toISOString()
     });
 
-    // ===== 9. CREATE AUDIT LOG =====
-    
-    await base44.asServiceRole.entities.AuditLog.create({
-      org_id,
-      user_id: user.id,
-      action: 'CREATE',
-      entity_type: 'DirectorDashboard',
-      entity_id: `dashboard-${Date.now()}`,
-      new_values: {
-        org_health_score: dashboardData.org_health_score,
-        generated_at: dashboardData.generated_at
-      }
-    });
+    // ===== CREATE AUDIT LOG =====
+    try {
+      await base44.asServiceRole.entities.AuditLog.create({
+        org_id,
+        user_id: user.id,
+        action: 'CREATE',
+        entity_type: 'DirectorDashboard',
+        entity_id: `dashboard-${Date.now()}`,
+        new_values: {
+          org_health_score: dashboardData.org_health_score,
+          sla_risk_score: slaRiskScore,
+          utilisation_pct: utilisationPct,
+          financial_risk: financialRisk,
+          generated_at: dashboardData.generated_at
+        }
+      });
+    } catch (auditError) {
+      console.warn('Failed to create audit log:', auditError.message);
+    }
 
     console.log(`✅ Director Dashboard generated successfully`);
+    console.log(`📊 Final Metrics: Health=${orgHealthScore}, SLA=${slaRiskScore}, Util=${utilisationPct}%, Finance=${financialRisk}, Clients=${clientHealthScore}`);
 
     return Response.json({
       success: true,
@@ -354,7 +395,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('aiDirectorDashboard error:', error);
+    console.error('❌ aiDirectorDashboard error:', error);
     return Response.json({ 
       error: error.message,
       stack: error.stack 
