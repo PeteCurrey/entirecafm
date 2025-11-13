@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -162,15 +163,21 @@ export default function AIDirectorPage() {
         org_id: user.org_id
       });
       
-      if (result.data.success) {
+      console.log('📊 Dashboard response:', result.data);
+      
+      if (result.data && result.data.success) {
         setDashboardData(result.data);
         setLastUpdated(new Date());
+        console.log('✅ Dashboard data loaded successfully');
+      } else {
+        console.error('Dashboard response missing success flag:', result.data);
       }
 
       // Also refresh revenue projection
       queryClient.invalidateQueries(['revenue-projection']);
     } catch (error) {
       console.error("Error loading dashboard:", error);
+      alert(`Dashboard Error: ${error.message || 'Failed to load dashboard'}`);
     } finally {
       setIsLoadingDashboard(false);
     }
