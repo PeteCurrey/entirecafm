@@ -12,7 +12,9 @@ import {
   Shield,
   CheckCircle,
   Book,
-  Network
+  Network,
+  Briefcase,
+  ClipboardCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +28,8 @@ import {
 export default function SystemDocumentationPage() {
   const [user, setUser] = useState(null);
   const [generatedDoc, setGeneratedDoc] = useState(null);
+  const [validationReport, setValidationReport] = useState(null);
+  const [investorSummary, setInvestorSummary] = useState(null);
 
   useEffect(() => {
     loadUser();
@@ -48,6 +52,28 @@ export default function SystemDocumentationPage() {
     },
     onSuccess: (result) => {
       setGeneratedDoc(result.data);
+    },
+  });
+
+  const generateValidationMutation = useMutation({
+    mutationFn: async () => {
+      return base44.functions.invoke('generateDeploymentValidation', {
+        org_id: user.org_id || 'default-org'
+      });
+    },
+    onSuccess: (result) => {
+      setValidationReport(result.data);
+    },
+  });
+
+  const generateInvestorMutation = useMutation({
+    mutationFn: async () => {
+      return base44.functions.invoke('generateInvestorSummary', {
+        org_id: user.org_id || 'default-org'
+      });
+    },
+    onSuccess: (result) => {
+      setInvestorSummary(result.data);
     },
   });
 
@@ -154,67 +180,136 @@ export default function SystemDocumentationPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white mb-1">System Documentation</h1>
-              <p className="text-[#CED4DA]">Technical reference for EntireCAFM AI Platform</p>
+              <p className="text-[#CED4DA]">Technical reference, validation reports, and investor materials</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {generatedDoc && (
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 border">
-                <Check className="w-3 h-3 mr-1" />
-                Generated
-              </Badge>
-            )}
+        </div>
+
+        {/* Report Generation Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
+            <div className="flex items-center gap-3 mb-3">
+              <FileText className="w-5 h-5 text-[#27B3F7]" />
+              <h3 className="font-semibold text-white">System Documentation</h3>
+            </div>
+            <p className="text-sm text-[#CED4DA] mb-4">
+              Complete technical reference with architecture, schema, and APIs
+            </p>
             <Button
               onClick={() => generateDocMutation.mutate()}
               disabled={generateDocMutation.isPending}
-              className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
+              className="w-full bg-[#27B3F7] hover:bg-[#1E90C7] text-white"
+              size="sm"
             >
               {generateDocMutation.isPending ? (
                 <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" strokeWidth={1.5} />
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   Generating...
                 </>
               ) : (
                 <>
-                  <Download className="w-4 h-4 mr-2" strokeWidth={1.5} />
-                  Generate PDF
+                  <Download className="w-4 h-4 mr-2" />
+                  Generate
                 </>
               )}
             </Button>
-          </div>
-        </div>
-
-        {generatedDoc && (
-          <div className="glass-panel rounded-xl p-4 border border-green-500/30 bg-green-500/5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Check className="w-5 h-5 text-green-400" />
-                <div>
-                  <p className="text-white font-semibold">Documentation Generated</p>
-                  <p className="text-sm text-[#CED4DA]">
-                    {generatedDoc.pages} pages • Generated {new Date(generatedDoc.timestamp).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
+            {generatedDoc && (
+              <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.08)]">
                 <Button
                   onClick={() => window.open(generatedDoc.pdf_url, '_blank')}
                   variant="outline"
-                  className="border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
+                  size="sm"
+                  className="w-full border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PDF
+                  <Download className="w-3 h-3 mr-2" />
+                  View Document
                 </Button>
-                {generatedDoc.email_sent && (
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30 border">
-                    <Mail className="w-3 h-3 mr-1" />
-                    Emailed
-                  </Badge>
-                )}
               </div>
-            </div>
+            )}
           </div>
-        )}
+
+          <div className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
+            <div className="flex items-center gap-3 mb-3">
+              <ClipboardCheck className="w-5 h-5 text-green-400" />
+              <h3 className="font-semibold text-white">Deployment Validation</h3>
+            </div>
+            <p className="text-sm text-[#CED4DA] mb-4">
+              Infrastructure status, QA metrics, and compliance verification
+            </p>
+            <Button
+              onClick={() => generateValidationMutation.mutate()}
+              disabled={generateValidationMutation.isPending}
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              size="sm"
+            >
+              {generateValidationMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Validating...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Generate
+                </>
+              )}
+            </Button>
+            {validationReport && (
+              <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.08)]">
+                <Button
+                  onClick={() => window.open(validationReport.pdf_url, '_blank')}
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
+                >
+                  <Download className="w-3 h-3 mr-2" />
+                  View Report
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
+            <div className="flex items-center gap-3 mb-3">
+              <Briefcase className="w-5 h-5 text-[#E41E65]" />
+              <h3 className="font-semibold text-white">Investor Summary</h3>
+            </div>
+            <p className="text-sm text-[#CED4DA] mb-4">
+              Executive overview for investor presentations and business development
+            </p>
+            <Button
+              onClick={() => generateInvestorMutation.mutate()}
+              disabled={generateInvestorMutation.isPending}
+              className="w-full bg-[#E41E65] hover:bg-[#C13666] text-white"
+              size="sm"
+            >
+              {generateInvestorMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Generate
+                </>
+              )}
+            </Button>
+            {investorSummary && (
+              <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.08)]">
+                <Button
+                  onClick={() => window.open(investorSummary.pdf_url, '_blank')}
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
+                >
+                  <Download className="w-3 h-3 mr-2" />
+                  View Summary
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
