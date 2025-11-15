@@ -48,15 +48,14 @@ export default function SplashScreen({ oncePerSession = true, minMs = 3000 }) {
         className="fixed inset-0 z-[9999] flex items-center justify-center"
         style={{ background: theme.primary, color: "#fff" }}
       >
-        {/* Accent sweep line - ALWAYS visible */}
+        {/* Accent sweep line */}
         <motion.div
           initial={{ x: "-100%" }}
-          animate={{ x: "100%" }}
-          transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+          animate={{ x: "0%" }}
+          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           className="absolute top-0 left-0 h-[2px] w-full"
           style={{ 
-            background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)`,
-            boxShadow: `0 0 10px ${theme.accent}`
+            background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)`
           }}
         />
 
