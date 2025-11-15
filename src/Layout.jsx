@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import OnboardingWalkthrough from "../components/onboarding/OnboardingWalkthrough";
+import { hasPagePermission, getUserRole, ROLES } from "../components/rbac/permissions";
 import {
   LayoutDashboard,
   Wrench,
@@ -29,7 +30,8 @@ import {
   CreditCard,
   Megaphone,
   Navigation,
-  MessageCircle
+  MessageCircle,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -37,41 +39,42 @@ const navigationSections = [
   {
     title: "OPERATIONS",
     items: [
-      { title: "Operations Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard, roles: ["admin", "user"] },
-      { title: "Map & Tracking", url: createPageUrl("MapTracking"), icon: Map, roles: ["admin", "user"] },
-      { title: "AI Helpdesk", url: createPageUrl("AIHelpdesk"), icon: Bot, roles: ["admin", "user"] },
-      { title: "Jobs", url: createPageUrl("Jobs"), icon: Wrench, roles: ["admin", "user"] },
-      { title: "Requests", url: createPageUrl("Requests"), icon: Inbox, roles: ["admin", "user"] },
-      { title: "Quotes", url: createPageUrl("Quotes"), icon: ClipboardList, roles: ["admin", "user"] },
-      { title: "Schedule", url: createPageUrl("Scheduling"), icon: Calendar, roles: ["admin", "user"] },
-      { title: "PPM Planner", url: createPageUrl("PPMPlanner"), icon: Calendar, roles: ["admin", "user"] },
-      { title: "Assets", url: createPageUrl("Assets"), icon: Database, roles: ["admin", "user"] },
-      { title: "Sites", url: createPageUrl("Sites"), icon: MapPin, roles: ["admin", "user"] },
-      { title: "Clients", url: createPageUrl("Clients"), icon: Building2, roles: ["admin", "user"] },
-      { title: "Engineers", url: createPageUrl("Team"), icon: Users, roles: ["admin"] },
-      { title: "Contractors", url: createPageUrl("Team"), icon: UserCheck, roles: ["admin"] },
-      { title: "Invoices", url: createPageUrl("Invoices"), icon: DollarSign, roles: ["admin", "user"] },
-      { title: "Documents", url: createPageUrl("Documents"), icon: FolderOpen, roles: ["admin", "user"] },
-      { title: "Reports", url: createPageUrl("Reports"), icon: BarChart3, roles: ["admin"] },
-      { title: "Approvals", url: createPageUrl("Approvals"), icon: CheckSquare, roles: ["admin"] },
+      { title: "Operations Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard, page: "Dashboard" },
+      { title: "Map & Tracking", url: createPageUrl("MapTracking"), icon: Map, page: "MapTracking" },
+      { title: "AI Helpdesk", url: createPageUrl("AIHelpdesk"), icon: Bot, page: "AIHelpdesk" },
+      { title: "Jobs", url: createPageUrl("Jobs"), icon: Wrench, page: "Jobs" },
+      { title: "Requests", url: createPageUrl("Requests"), icon: Inbox, page: "Requests" },
+      { title: "Quotes", url: createPageUrl("Quotes"), icon: ClipboardList, page: "Quotes" },
+      { title: "Schedule", url: createPageUrl("Scheduling"), icon: Calendar, page: "Scheduling" },
+      { title: "PPM Planner", url: createPageUrl("PPMPlanner"), icon: Calendar, page: "PPMPlanner" },
+      { title: "Assets", url: createPageUrl("Assets"), icon: Database, page: "Assets" },
+      { title: "Sites", url: createPageUrl("Sites"), icon: MapPin, page: "Sites" },
+      { title: "Clients", url: createPageUrl("Clients"), icon: Building2, page: "Clients" },
+      { title: "Engineers", url: createPageUrl("Team"), icon: Users, page: "Team" },
+      { title: "Contractors", url: createPageUrl("Team"), icon: UserCheck, page: "Team" },
+      { title: "Invoices", url: createPageUrl("Invoices"), icon: DollarSign, page: "Invoices" },
+      { title: "Documents", url: createPageUrl("Documents"), icon: FolderOpen, page: "Documents" },
+      { title: "Reports", url: createPageUrl("Reports"), icon: BarChart3, page: "Reports" },
+      { title: "Approvals", url: createPageUrl("Approvals"), icon: CheckSquare, page: "Approvals" },
+      { title: "Compliance & ESG", url: createPageUrl("Compliance"), icon: Shield, page: "Compliance" },
     ]
   },
   {
     title: "AI OPERATIONS",
     items: [
-      { title: "AI Director Dashboard", url: createPageUrl("AIDirector"), icon: TrendingUp, roles: ["admin"] },
-      { title: "AI Accounts Dashboard", url: createPageUrl("AIAccounts"), icon: CreditCard, roles: ["admin"] },
-      { title: "AI Marketing Dashboard", url: createPageUrl("AIMarketing"), icon: Megaphone, roles: ["admin"] },
-      { title: "Executive Briefing", url: createPageUrl("ExecutiveBrief"), icon: FileText, roles: ["admin"] },
-      { title: "AI Assistant", url: createPageUrl("AIAssistant"), icon: MessageCircle, roles: ["admin", "user"] },
-      { title: "System Documentation", url: createPageUrl("SystemDocumentation"), icon: FolderOpen, roles: ["admin"] },
+      { title: "AI Director Dashboard", url: createPageUrl("AIDirector"), icon: TrendingUp, page: "AIDirector" },
+      { title: "AI Accounts Dashboard", url: createPageUrl("AIAccounts"), icon: CreditCard, page: "AIAccounts" },
+      { title: "AI Marketing Dashboard", url: createPageUrl("AIMarketing"), icon: Megaphone, page: "AIMarketing" },
+      { title: "Executive Briefing", url: createPageUrl("ExecutiveBrief"), icon: FileText, page: "ExecutiveBrief" },
+      { title: "AI Assistant", url: createPageUrl("AIAssistant"), icon: MessageCircle, page: "AIAssistant" },
+      { title: "System Documentation", url: createPageUrl("SystemDocumentation"), icon: FolderOpen, page: "SystemDocumentation" },
     ]
   },
   {
     title: "TESTING & DEV",
     items: [
-      { title: "Engineer Simulator", url: createPageUrl("EngineerSimulator"), icon: Navigation, roles: ["admin"] },
-      { title: "Test Redis Real-Time", url: createPageUrl("TestRedis"), icon: Bot, roles: ["admin"] },
+      { title: "Engineer Simulator", url: createPageUrl("EngineerSimulator"), icon: Navigation, page: "EngineerSimulator" },
+      { title: "Test Redis Real-Time", url: createPageUrl("TestRedis"), icon: Bot, page: "TestRedis" },
     ]
   }
 ];
@@ -92,7 +95,6 @@ export default function Layout({ children, currentPageName }) {
       const userData = await base44.auth.me();
       setUser(userData);
       
-      // Check if user needs onboarding
       if (userData && !userData.onboarded) {
         setShowOnboarding(true);
       }
@@ -108,7 +110,6 @@ export default function Layout({ children, currentPageName }) {
         onboarded_date: new Date().toISOString()
       });
       setShowOnboarding(false);
-      // Refresh user data
       const userData = await base44.auth.me();
       setUser(userData);
     } catch (error) {
@@ -120,14 +121,15 @@ export default function Layout({ children, currentPageName }) {
     base44.auth.logout();
   };
 
+  const userRole = getUserRole(user);
+
   const filteredSections = navigationSections.map(section => ({
     ...section,
-    items: section.items.filter(item => !item.roles || item.roles.includes(user?.role))
+    items: section.items.filter(item => hasPagePermission(userRole, item.page))
   })).filter(section => section.items.length > 0);
 
   return (
     <>
-      {/* Onboarding Walkthrough */}
       {showOnboarding && (
         <OnboardingWalkthrough onComplete={handleCompleteOnboarding} />
       )}
@@ -195,7 +197,6 @@ export default function Layout({ children, currentPageName }) {
       `}</style>
 
       <div className="flex h-screen">
-        {/* Sidebar - Desktop */}
         <aside className="hidden lg:flex lg:flex-col lg:w-60 glass-panel border-r border-[rgba(255,255,255,0.08)] overflow-y-auto">
           <div className="p-6 border-b border-[rgba(255,255,255,0.08)]">
             <div className="flex items-center gap-3">
@@ -206,10 +207,16 @@ export default function Layout({ children, currentPageName }) {
                 ENTIRE<span className="text-[#E41E65]">CAFM</span>
               </span>
             </div>
+            {user && (
+              <div className="mt-3 text-xs text-[#CED4DA]">
+                {user.full_name}
+                <div className="text-[10px] text-[#8B949E] uppercase">{userRole}</div>
+              </div>
+            )}
           </div>
 
           <nav className="flex-1 py-4">
-            {filteredSections.map((section, sectionIndex) => (
+            {filteredSections.map((section) => (
               <div key={section.title}>
                 <div className="section-label">{section.title}</div>
                 {section.items.map((item) => {
@@ -232,7 +239,6 @@ export default function Layout({ children, currentPageName }) {
           </nav>
         </aside>
 
-        {/* Mobile Header */}
         <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0D1117] border-b border-[rgba(255,255,255,0.08)] p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -254,11 +260,10 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-40 glass-panel-strong pt-20 overflow-y-auto">
             <nav className="p-6 space-y-2">
-              {filteredSections.map((section, sectionIndex) => (
+              {filteredSections.map((section) => (
                 <div key={section.title}>
                   <div className="section-label">{section.title}</div>
                   {section.items.map((item) => {
@@ -283,7 +288,6 @@ export default function Layout({ children, currentPageName }) {
           </div>
         )}
 
-        {/* Main Content */}
         <main className="flex-1 overflow-auto lg:pt-0 pt-20">
           {children}
         </main>
