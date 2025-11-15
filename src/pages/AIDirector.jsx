@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -12,13 +11,7 @@ import {
   Heart,
   RefreshCw,
   Activity,
-  CheckCircle,
-  XCircle,
   Clock,
-  Zap,
-  ArrowUp,
-  ArrowDown,
-  Minus,
   ChevronRight,
   ExternalLink,
   Bell,
@@ -44,7 +37,6 @@ import AlertRuleForm from "../components/alerts/AlertRuleForm";
 import AlertNotificationDropdown from "../components/alerts/AlertNotificationDropdown";
 import TrendsTab from "../components/director/TrendsTab";
 
-// WebSocket connection state
 let ws = null;
 
 export default function AIDirectorPage() {
@@ -62,7 +54,6 @@ export default function AIDirectorPage() {
   const [revenueProjection, setRevenueProjection] = useState(null);
   const [benchmarkData, setBenchmarkData] = useState(null);
 
-  // Save scroll position before unmount
   useEffect(() => {
     const handleScroll = () => {
       scrollPositionRef.current = window.scrollY;
@@ -71,7 +62,6 @@ export default function AIDirectorPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Restore scroll position when returning
   useEffect(() => {
     const savedPosition = sessionStorage.getItem('directorScrollPosition');
     if (savedPosition) {
@@ -106,7 +96,6 @@ export default function AIDirectorPage() {
     enabled: !!user?.org_id,
   });
 
-  // Fetch latest revenue projection
   const { data: latestProjection } = useQuery({
     queryKey: ['revenue-projection', user?.org_id],
     queryFn: async () => {
@@ -126,7 +115,6 @@ export default function AIDirectorPage() {
     }
   }, [latestProjection]);
 
-  // Fetch benchmark data
   const { data: benchmarks } = useQuery({
     queryKey: ['benchmarks', user?.org_id],
     queryFn: async () => {
@@ -181,52 +169,25 @@ export default function AIDirectorPage() {
         org_id: user.org_id
       });
       
-      console.log('📊 Dashboard response:', result.data);
-      
       if (result.data && result.data.success) {
         setDashboardData(result.data);
         setLastUpdated(new Date());
-        console.log('✅ Dashboard data loaded successfully');
-      } else {
-        console.error('Dashboard response missing success flag:', result.data);
       }
-
-      // Also refresh revenue projection
       queryClient.invalidateQueries(['revenue-projection']);
     } catch (error) {
       console.error("Error loading dashboard:", error);
-      alert(`Dashboard Error: ${error.message || 'Failed to load dashboard'}`);
     } finally {
       setIsLoadingDashboard(false);
-    }
-  };
-
-  const runRevenueSimulator = async () => {
-    if (!user?.org_id) return;
-    
-    try {
-      const result = await base44.functions.invoke('revenueSimulator', {
-        org_id: user.org_id
-      });
-      
-      if (result.data.success) {
-        queryClient.invalidateQueries(['revenue-projection']);
-        console.log('✅ Revenue forecast updated');
-      }
-    } catch (error) {
-      console.error("Error running revenue simulator:", error);
     }
   };
 
   const setupWebSocket = () => {
     if (!user?.org_id) return;
     
-    // Close existing connection
     if (ws) {
       ws.close();
     }
 
-    // Get WebSocket URL from environment or construct it
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     
@@ -234,10 +195,7 @@ export default function AIDirectorPage() {
       ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
-        console.log('✅ WebSocket connected');
         setWsConnected(true);
-        
-        // Subscribe to director channel
         ws.send(JSON.stringify({
           type: 'subscribe',
           channel: `director.org.${user.org_id}`
@@ -249,13 +207,11 @@ export default function AIDirectorPage() {
           const message = JSON.parse(event.data);
           
           if (message.type === 'director_dashboard_update') {
-            console.log('📊 Dashboard update received via WebSocket');
             setDashboardData(message.data);
             setLastUpdated(new Date());
           }
           
           if (message.type === 'revenue_forecast_available') {
-            console.log('💷 Revenue forecast update received');
             queryClient.invalidateQueries(['revenue-projection']);
           }
         } catch (error) {
@@ -263,16 +219,9 @@ export default function AIDirectorPage() {
         }
       };
 
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setWsConnected(false);
-      };
-
+      ws.onerror = () => setWsConnected(false);
       ws.onclose = () => {
-        console.log('WebSocket disconnected');
         setWsConnected(false);
-        
-        // Attempt reconnection after 5 seconds
         setTimeout(() => {
           if (user?.org_id) {
             setupWebSocket();
@@ -285,7 +234,6 @@ export default function AIDirectorPage() {
     }
   };
 
-  // Navigation handlers with scroll position preservation
   const handleNavigate = (path) => {
     sessionStorage.setItem('directorScrollPosition', scrollPositionRef.current.toString());
     navigate(path);
@@ -336,31 +284,24 @@ export default function AIDirectorPage() {
     return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', label: 'COLLECTION REQUIRED' };
   };
 
-  if (!dashboardData && !isLoadingDashboard) {
-    return (
-      <div className="p-6 lg:p-8">
-        <div className="glass-panel rounded-2xl p-12 border border-[rgba(255,255,255,0.08)] text-center">
-          <Activity className="w-16 h-16 mx-auto mb-4 text-[#E1467C]" />
-          <h2 className="text-2xl font-bold text-white mb-2">Director Dashboard</h2>
-          <p className="text-[#CED4DA] mb-6">Load operational intelligence and key metrics</p>
-          <Button
-            onClick={loadDashboard}
-            className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Generate Dashboard
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   if (isLoadingDashboard) {
     return (
       <div className="p-6 lg:p-8">
         <div className="glass-panel rounded-2xl p-12 border border-[rgba(255,255,255,0.08)] text-center">
           <div className="w-12 h-12 border-4 border-[rgba(255,255,255,0.3)] border-t-white rounded-full animate-spin mx-auto mb-4" />
           <p className="text-[#CED4DA]">Aggregating operational intelligence...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="glass-panel rounded-2xl p-12 border border-[rgba(255,255,255,0.08)] text-center">
+          <Activity className="w-16 h-16 mx-auto mb-4 text-[#E1467C]" />
+          <h2 className="text-2xl font-bold text-white mb-2">Director Dashboard</h2>
+          <p className="text-[#CED4DA] mb-6">Loading operational intelligence...</p>
         </div>
       </div>
     );
