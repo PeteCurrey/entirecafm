@@ -4,101 +4,200 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-
+    
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { org_id, keyword, url } = await req.json();
+    const body = await req.json();
+    const { org_id, keyword, url, check_competitors = false, run_audit = false } = body;
 
-    if (!keyword) {
-      return Response.json({ error: 'Keyword required' }, { status: 400 });
+    if (!keyword || !url) {
+      return Response.json({ error: 'keyword and url required' }, { status: 400 });
     }
 
-    console.log(`🔍 Tracking keyword: "${keyword}" for org: ${org_id}`);
+    // Simulate SERP data using LLM (in production, use real SERP API)
+    const serpResponse = await base44.integrations.Core.InvokeLLM({
+      prompt: `You are a SERP API simulator. For the keyword "${keyword}" and URL "${url}", generate realistic search ranking data.
+      
+Return data in the following format:
+- Current rank (1-100, or null if not ranking)
+- Previous rank (for comparison)
+- Monthly search volume (realistic number based on keyword type)
+- Competition level (low, medium, high)
 
-    // Simulate SERP API call (in production, integrate with SerpAPI, DataForSEO, etc.)
-    // For demo purposes, we'll use AI to generate realistic ranking data
-    const serpData = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a SERP rank simulator. Given the keyword "${keyword}" for a CAFM/facilities management company, generate realistic SEO metrics.
-      
-      Consider:
-      - Most CAFM companies rank between positions 15-50 for competitive keywords
-      - Local/niche keywords might rank 5-15
-      - Brand keywords rank 1-5
-      - New content starts at 50-100
-      
-      Return JSON with:
-      - rank (1-100): Current SERP position
-      - search_volume (100-10000): Monthly searches
-      - competition ("low"|"medium"|"high"): Keyword difficulty
-      - change_7d (-10 to +10): Rank change (negative = improved)`,
+Be realistic: commercial keywords have higher volume, long-tail have lower volume.`,
       response_json_schema: {
         type: "object",
         properties: {
-          rank: { type: "number" },
+          current_rank: { type: ["number", "null"] },
+          previous_rank: { type: ["number", "null"] },
           search_volume: { type: "number" },
-          competition: { type: "string" },
-          change_7d: { type: "number" }
+          competition: { type: "string", enum: ["low", "medium", "high"] }
         }
       }
     });
 
-    console.log(`📊 SERP Data:`, serpData);
+    const rankData = serpResponse;
 
-    // Find existing keyword record
-    const existingKeywords = await base44.entities.SEOKeyword.filter({
+    // Find or create keyword record
+    let keywordRecord = (await base44.asServiceRole.entities.SEOKeyword.filter({
       org_id,
-      keyword
-    });
+      keyword,
+      url
+    }))[0];
 
-    let keywordRecord;
     const now = new Date().toISOString();
 
-    if (existingKeywords.length > 0) {
-      // Update existing
-      const existing = existingKeywords[0];
-      keywordRecord = await base44.entities.SEOKeyword.update(existing.id, {
-        previous_rank: existing.rank,
-        rank: serpData.rank,
-        change_7d: serpData.change_7d,
-        search_volume: serpData.search_volume,
-        competition: serpData.competition,
-        last_checked: now,
-        url: url || existing.url
-      });
-      console.log(`✅ Updated keyword: ${keyword}`);
-    } else {
-      // Create new
-      keywordRecord = await base44.entities.SEOKeyword.create({
+    if (!keywordRecord) {
+      keywordRecord = await base44.asServiceRole.entities.SEOKeyword.create({
         org_id,
         keyword,
-        rank: serpData.rank,
-        previous_rank: serpData.rank,
-        change_7d: 0,
-        search_volume: serpData.search_volume,
-        competition: serpData.competition,
+        url,
+        rank: rankData.current_rank,
+        previous_rank: rankData.previous_rank,
+        search_volume: rankData.search_volume,
+        competition: rankData.competition,
         last_checked: now,
-        url: url || '',
-        status: 'active'
+        status: 'active',
+        change_7d: rankData.previous_rank && rankData.current_rank 
+          ? rankData.previous_rank - rankData.current_rank 
+          : 0
       });
-      console.log(`✅ Created new keyword: ${keyword}`);
+    } else {
+      // Update existing record
+      await base44.asServiceRole.entities.SEOKeyword.update(keywordRecord.id, {
+        previous_rank: keywordRecord.rank,
+        rank: rankData.current_rank,
+        search_volume: rankData.search_volume,
+        competition: rankData.competition,
+        last_checked: now,
+        change_7d: keywordRecord.rank && rankData.current_rank
+          ? keywordRecord.rank - rankData.current_rank
+          : 0
+      });
     }
+
+    // Store historical data
+    await base44.asServiceRole.entities.SEOKeywordHistory.create({
+      org_id,
+      keyword_id: keywordRecord.id,
+      keyword,
+      url,
+      rank: rankData.current_rank,
+      search_volume: rankData.search_volume,
+      checked_at: now,
+      is_competitor: false
+    });
+
+    // Track competitors if requested
+    let competitorData = [];
+    if (check_competitors) {
+      const competitors = await base44.asServiceRole.entities.SEOCompetitor.filter({
+        org_id,
+        is_active: true
+      });
+
+      for (const competitor of competitors) {
+        const compSerpResponse = await base44.integrations.Core.InvokeLLM({
+          prompt: `For keyword "${keyword}", estimate the SERP rank for competitor domain "${competitor.domain}". Return a realistic rank (1-100) or null if not ranking.`,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              rank: { type: ["number", "null"] }
+            }
+          }
+        });
+
+        // Store competitor history
+        await base44.asServiceRole.entities.SEOKeywordHistory.create({
+          org_id,
+          keyword_id: keywordRecord.id,
+          keyword,
+          url: competitor.domain,
+          rank: compSerpResponse.rank,
+          search_volume: rankData.search_volume,
+          checked_at: now,
+          is_competitor: true
+        });
+
+        competitorData.push({
+          competitor: competitor.name || competitor.domain,
+          rank: compSerpResponse.rank
+        });
+      }
+    }
+
+    // Run on-page SEO audit if requested
+    let auditResult = null;
+    if (run_audit) {
+      const auditResponse = await base44.integrations.Core.InvokeLLM({
+        prompt: `Perform a simulated on-page SEO audit for URL "${url}" targeting keyword "${keyword}".
+
+Generate realistic audit data including:
+- Page title and length (50-60 chars ideal)
+- Meta description and length (150-160 chars ideal)
+- H1 tags (should be 1)
+- H2 tag count
+- Word count (aim for 1000+ for blog posts)
+- Keyword density for top 5 keywords
+- SEO score (0-100)
+- Issues found (e.g., "Title too short", "Missing meta description", "No H1 tag", "Low word count")
+- Recommendations (e.g., "Add meta description", "Increase content length", "Optimize title for keyword")
+
+Be realistic and helpful.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            title_length: { type: "number" },
+            meta_description: { type: ["string", "null"] },
+            meta_description_length: { type: ["number", "null"] },
+            h1_tags: { type: "array", items: { type: "string" } },
+            h2_count: { type: "number" },
+            word_count: { type: "number" },
+            keyword_density: { type: "object" },
+            score: { type: "number" },
+            issues: { type: "array", items: { type: "string" } },
+            recommendations: { type: "array", items: { type: "string" } }
+          }
+        }
+      });
+
+      auditResult = await base44.asServiceRole.entities.SEOAudit.create({
+        org_id,
+        url,
+        audit_date: now,
+        ...auditResponse
+      });
+    }
+
+    // Create audit log
+    await base44.asServiceRole.entities.AuditLog.create({
+      org_id,
+      user_id: user.id,
+      action: 'CREATE',
+      entity_type: 'SEOKeyword',
+      entity_id: keywordRecord.id,
+      new_values: { keyword, url, rank: rankData.current_rank },
+      timestamp: now
+    });
 
     return Response.json({
       success: true,
       keyword: keywordRecord,
-      insights: {
-        trend: serpData.change_7d < 0 ? 'improving' : serpData.change_7d > 0 ? 'declining' : 'stable',
-        opportunity_score: serpData.rank > 20 && serpData.search_volume > 500 ? 'high' : 'medium'
-      }
+      rank_data: rankData,
+      competitors: competitorData,
+      audit: auditResult,
+      insight: rankData.current_rank 
+        ? `"${keyword}" ranks at position ${rankData.current_rank}`
+        : `"${keyword}" is not currently ranking in top 100`
     });
 
   } catch (error) {
-    console.error('❌ seoTracker error:', error);
+    console.error('SEO Tracker error:', error);
     return Response.json({ 
-      error: error.message,
-      stack: error.stack 
+      error: error.message || 'Failed to track keyword'
     }, { status: 500 });
   }
 });
