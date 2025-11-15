@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import OnboardingWalkthrough from "../components/onboarding/OnboardingWalkthrough";
+import SplashScreen from "../components/SplashScreen";
 import { hasPagePermission, getUserRole, ROLES } from "../components/rbac/permissions";
 import {
   LayoutDashboard,
@@ -130,6 +132,8 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <>
+      <SplashScreen />
+      
       {showOnboarding && (
         <OnboardingWalkthrough onComplete={handleCompleteOnboarding} />
       )}
