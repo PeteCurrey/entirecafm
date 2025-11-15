@@ -32,6 +32,7 @@ import AIAssistant from './pages/AIAssistant';
 import SystemDocumentation from './pages/SystemDocumentation';
 import AILeads from './pages/AILeads';
 import AssetsPredict from './pages/AssetsPredict';
+import Compliance from './pages/Compliance';
 import Layout from './Layout.jsx';
 
 
@@ -70,6 +71,7 @@ export const PAGES = {
     "SystemDocumentation": SystemDocumentation,
     "AILeads": AILeads,
     "AssetsPredict": AssetsPredict,
+    "Compliance": Compliance,
 }
 
 export const pagesConfig = {
