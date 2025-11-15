@@ -6,8 +6,8 @@ export default function SplashScreen({ oncePerSession = true, minMs = 3000 }) {
   const [show, setShow] = useState(true);
   const [theme, setTheme] = useState({ 
     logo: null, 
-    primary: "#0B0B0D", 
-    accent: "#E41E65", 
+    primary: "#0E0E11", 
+    accent: "#E1467C", 
     welcome: "AI Operations Platform" 
   });
 
@@ -48,20 +48,19 @@ export default function SplashScreen({ oncePerSession = true, minMs = 3000 }) {
         className="fixed inset-0 z-[9999] flex items-center justify-center"
         style={{ background: theme.primary, color: "#fff" }}
       >
-        {/* Accent sweep with glow */}
+        {/* Accent sweep */}
         <motion.div
           initial={{ x: "-100%" }}
           animate={{ x: "0%" }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           className="absolute top-0 left-0 h-[2px] w-full"
           style={{ 
-            background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)`,
-            boxShadow: `0 0 20px ${theme.accent}`
+            background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)` 
           }}
         />
 
-        {/* Logo / Wordmark with magenta glow */}
-        <div className="flex flex-col items-center gap-3 shadow-[0_10px_40px_rgba(228,30,101,0.25)]">
+        {/* Logo / Wordmark */}
+        <div className="flex flex-col items-center gap-3">
           {theme.logo ? (
             <motion.img
               src={theme.logo}
