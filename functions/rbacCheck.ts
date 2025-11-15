@@ -1,16 +1,34 @@
-import { FUNCTION_PERMISSIONS } from '../components/rbac/permissions.js';
-
 export function requirePermission(user, functionName) {
   if (!user) {
     throw new Error('Access denied: User not authenticated');
   }
 
-  // Admin has access to everything
+  // Admin always has access
   if (user.role === 'admin') {
     return true;
   }
 
-  // Check function permissions
+  // Map of function permissions - keep in sync with frontend
+  const FUNCTION_PERMISSIONS = {
+    aiDirectorDashboard: ['admin'],
+    aiFinancialForecaster: ['admin', 'finance'],
+    aiEngineerScheduler: ['admin', 'helpdesk'],
+    revenueSimulator: ['admin', 'finance'],
+    accounts: ['admin', 'finance'],
+    marketing: ['admin'],
+    certificateUploader: ['admin', 'engineer'],
+    esgCollector: ['admin'],
+    complianceReportGenerator: ['admin'],
+    iotIngest: ['admin', 'engineer'],
+    pafe_predictFailure: ['admin', 'engineer'],
+    exportInvoicesCSV: ['admin', 'finance'],
+    getClientDashboard: ['client'],
+    clientRequest: ['client'],
+    updateJobStatus: ['admin', 'engineer', 'helpdesk'],
+    aiHelpdeskTriage: ['admin', 'helpdesk'],
+    aiBenchmark: ['admin']
+  };
+
   const allowedRoles = FUNCTION_PERMISSIONS[functionName];
   
   if (!allowedRoles) {

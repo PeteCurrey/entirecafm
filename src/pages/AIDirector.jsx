@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -45,7 +46,7 @@ export default function AIDirectorPage() {
   const scrollPositionRef = useRef(0);
   const [user, setUser] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
-  const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [wsConnected, setWsConnected] = useState(false);
   const [showAlertsDialog, setShowAlertsDialog] = useState(false);
@@ -53,6 +54,7 @@ export default function AIDirectorPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [revenueProjection, setRevenueProjection] = useState(null);
   const [benchmarkData, setBenchmarkData] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -157,6 +159,7 @@ export default function AIDirectorPage() {
       setUser(userData);
     } catch (error) {
       console.error("Error loading user:", error);
+      setError("Failed to load user: " + error.message);
     }
   };
 
@@ -164,18 +167,30 @@ export default function AIDirectorPage() {
     if (!user?.org_id) return;
     
     setIsLoadingDashboard(true);
+    setError(null);
     try {
+      console.log('🚀 Loading director dashboard for org:', user.org_id);
       const result = await base44.functions.invoke('aiDirectorDashboard', {
         org_id: user.org_id
       });
       
+      console.log('📊 Dashboard response:', result);
+      
       if (result.data && result.data.success) {
         setDashboardData(result.data);
         setLastUpdated(new Date());
+        console.log('✅ Dashboard loaded successfully');
+      } else {
+        const errorMsg = result.data?.error || 'Invalid response format';
+        console.error('❌ Dashboard load failed:', errorMsg);
+        setError(errorMsg);
       }
+      
       queryClient.invalidateQueries(['revenue-projection']);
+      queryClient.invalidateQueries(['benchmarks']);
     } catch (error) {
-      console.error("Error loading dashboard:", error);
+      console.error("❌ Error loading dashboard:", error);
+      setError(error.message || 'Failed to load dashboard');
     } finally {
       setIsLoadingDashboard(false);
     }
@@ -284,6 +299,30 @@ export default function AIDirectorPage() {
     return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', label: 'COLLECTION REQUIRED' };
   };
 
+  if (error) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="glass-panel rounded-2xl p-12 border border-red-500/30 text-center">
+          <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-red-400" />
+          <h2 className="text-2xl font-bold text-white mb-2">Error Loading Dashboard</h2>
+          <p className="text-red-400 mb-6">{error}</p>
+          <div className="space-y-2 text-sm text-[#CED4DA] mb-6">
+            <p>• Ensure you have admin role</p>
+            <p>• Check backend function is deployed</p>
+            <p>• Verify org_id: {user?.org_id || 'not set'}</p>
+          </div>
+          <Button
+            onClick={loadDashboard}
+            className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoadingDashboard) {
     return (
       <div className="p-6 lg:p-8">
@@ -301,7 +340,14 @@ export default function AIDirectorPage() {
         <div className="glass-panel rounded-2xl p-12 border border-[rgba(255,255,255,0.08)] text-center">
           <Activity className="w-16 h-16 mx-auto mb-4 text-[#E1467C]" />
           <h2 className="text-2xl font-bold text-white mb-2">Director Dashboard</h2>
-          <p className="text-[#CED4DA] mb-6">Loading operational intelligence...</p>
+          <p className="text-[#CED4DA] mb-6">Initializing dashboard...</p>
+          <Button
+            onClick={loadDashboard}
+            className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Load Dashboard
+          </Button>
         </div>
       </div>
     );
