@@ -4,36 +4,22 @@ const REDIS_URL = Deno.env.get("UPSTASH_REDIS_REST_URL");
 const REDIS_TOKEN = Deno.env.get("UPSTASH_REDIS_REST_TOKEN");
 
 const clients = new Map();
-const rateLimits = new Map();
-
-function checkRateLimit(clientId) {
-  const now = Date.now();
-  const limit = rateLimits.get(clientId) || { count: 0, window: now };
-  
-  if (now - limit.window > 1000) {
-    limit.count = 0;
-    limit.window = now;
-  }
-  
-  limit.count++;
-  rateLimits.set(clientId, limit);
-  return limit.count <= 10;
-}
 
 async function subscribeToRedis(topic, callback) {
   if (!REDIS_URL || !REDIS_TOKEN) {
-    console.warn('Redis not configured');
+    console.warn('⚠️ Redis not configured');
     return null;
   }
 
-  console.log(`🔔 Subscribing to Redis topic: ${topic}`);
+  console.log(`🔔 Subscribing to Redis: ${topic}`);
 
   const response = await fetch(`${REDIS_URL}/subscribe/${topic}`, {
     headers: { 'Authorization': `Bearer ${REDIS_TOKEN}` },
   });
 
   if (!response.ok) {
-    throw new Error(`Redis subscribe failed: ${response.statusText}`);
+    console.error(`❌ Redis subscribe failed: ${response.statusText}`);
+    return null;
   }
 
   const reader = response.body?.getReader();
@@ -68,8 +54,10 @@ async function subscribeToRedis(topic, callback) {
 }
 
 Deno.serve((req) => {
+  console.log(`📡 WS Request: ${req.url}`);
+  
   if (req.headers.get("upgrade") !== "websocket") {
-    return new Response("Expected WebSocket connection", { status: 400 });
+    return new Response("Expected WebSocket", { status: 400 });
   }
 
   const url = new URL(req.url);
@@ -82,28 +70,33 @@ Deno.serve((req) => {
   const { socket, response } = Deno.upgradeWebSocket(req);
 
   socket.onopen = async () => {
+    console.log(`🔌 WebSocket opened for org: ${orgId}`);
+    
     try {
       const base44 = createClientFromRequest(req);
       const user = await base44.auth.me();
       
-      if (!user || user.org_id !== orgId) {
-        socket.close(1008, "Unauthorized");
+      if (!user) {
+        console.error('❌ No authenticated user');
+        socket.close(1008, "No user");
+        return;
+      }
+      
+      if (user.org_id !== orgId) {
+        console.error(`❌ Org mismatch: ${user.org_id} !== ${orgId}`);
+        socket.close(1008, "Org mismatch");
         return;
       }
 
-      const clientId = `${user.id}-${orgId}-${Date.now()}`;
-      clients.set(clientId, { socket, orgId, userId: user.id });
+      const clientId = `${user.id}-${Date.now()}`;
+      clients.set(clientId, { socket, orgId });
 
-      console.log(`✅ Client connected: ${clientId}`);
+      console.log(`✅ Client ${clientId} connected`);
 
       const topics = [
         `map.org.${orgId}`,
-        `jobs.org.${orgId}`,
         `director.org.${orgId}`,
-        `pafe.org.${orgId}`,
-        `compliance.org.${orgId}`,
-        `sustainability.org.${orgId}`,
-        `client.chat.${orgId}`
+        `compliance.org.${orgId}`
       ];
 
       const unsubscribers = await Promise.all(
@@ -111,11 +104,10 @@ Deno.serve((req) => {
           subscribeToRedis(topic, (message) => {
             for (const [cId, client] of clients.entries()) {
               if (client.orgId === orgId && client.socket.readyState === 1) {
-                if (!checkRateLimit(cId)) continue;
                 try {
                   client.socket.send(JSON.stringify({ topic, ...message }));
                 } catch (err) {
-                  console.error(`Send error:`, err);
+                  console.error('Send error:', err);
                 }
               }
             }
@@ -132,18 +124,17 @@ Deno.serve((req) => {
 
       socket.onclose = () => {
         clients.delete(clientId);
-        rateLimits.delete(clientId);
         unsubscribers.forEach(unsub => unsub?.());
-        console.log(`❌ Client disconnected: ${clientId}`);
+        console.log(`❌ Client ${clientId} disconnected`);
       };
 
     } catch (error) {
-      console.error('WebSocket auth error:', error);
-      socket.close(1008, "Authentication failed");
+      console.error('❌ Auth error:', error);
+      socket.close(1008, error.message);
     }
   };
 
-  socket.onerror = (error) => console.error("WebSocket error:", error);
+  socket.onerror = (error) => console.error("❌ WS error:", error);
 
   return response;
 });
