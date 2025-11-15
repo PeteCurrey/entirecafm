@@ -60,6 +60,7 @@ export default function AIDirectorPage() {
   const [showNewAlertForm, setShowNewAlertForm] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [revenueProjection, setRevenueProjection] = useState(null);
+  const [benchmarkData, setBenchmarkData] = useState(null);
 
   // Save scroll position before unmount
   useEffect(() => {
@@ -124,6 +125,23 @@ export default function AIDirectorPage() {
       setRevenueProjection(latestProjection);
     }
   }, [latestProjection]);
+
+  // Fetch benchmark data
+  const { data: benchmarks } = useQuery({
+    queryKey: ['benchmarks', user?.org_id],
+    queryFn: async () => {
+      if (!user?.org_id) return null;
+      const result = await base44.functions.invoke('aiBenchmark', { org_id: user.org_id });
+      return result.data;
+    },
+    enabled: !!user?.org_id,
+  });
+
+  useEffect(() => {
+    if (benchmarks) {
+      setBenchmarkData(benchmarks);
+    }
+  }, [benchmarks]);
 
   const createAlertMutation = useMutation({
     mutationFn: async (data) => {
@@ -414,6 +432,99 @@ export default function AIDirectorPage() {
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
+          {/* Benchmark vs Industry */}
+          {benchmarkData && (
+            <>
+              <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-[#E1467C]" strokeWidth={1.5} />
+                Benchmark vs Industry
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+                  <div className="text-sm text-[#CED4DA] mb-1">SLA Performance</div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-3xl font-bold text-white">
+                      {benchmarkData.your_performance.sla_performance}%
+                    </div>
+                    <Badge className={`${
+                      benchmarkData.percentile_ranking.sla_performance >= 75 ? 'bg-green-500/20 text-green-400' :
+                      benchmarkData.percentile_ranking.sla_performance >= 50 ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-red-500/20 text-red-400'
+                    }`}>
+                      Top {100 - benchmarkData.percentile_ranking.sla_performance}%
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-[#CED4DA] space-y-1">
+                    <div className="flex justify-between">
+                      <span>Industry Average:</span>
+                      <span className="text-white">{benchmarkData.industry_average.sla_performance}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Top 10%:</span>
+                      <span className="text-green-400">{benchmarkData.industry_top_10.sla_performance}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+                  <div className="text-sm text-[#CED4DA] mb-1">Compliance Rate</div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-3xl font-bold text-white">
+                      {benchmarkData.your_performance.compliance_rate}%
+                    </div>
+                    <Badge className={`${
+                      benchmarkData.percentile_ranking.compliance_rate >= 75 ? 'bg-green-500/20 text-green-400' :
+                      benchmarkData.percentile_ranking.compliance_rate >= 50 ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-red-500/20 text-red-400'
+                    }`}>
+                      Top {100 - benchmarkData.percentile_ranking.compliance_rate}%
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-[#CED4DA] space-y-1">
+                    <div className="flex justify-between">
+                      <span>Industry Average:</span>
+                      <span className="text-white">{benchmarkData.industry_average.compliance_rate}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Top 10%:</span>
+                      <span className="text-green-400">{benchmarkData.industry_top_10.compliance_rate}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+                  <div className="text-sm text-[#CED4DA] mb-1">ESG Score</div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-3xl font-bold text-white">
+                      {benchmarkData.your_performance.esg_score}
+                    </div>
+                    <Badge className={`${
+                      benchmarkData.percentile_ranking.esg_score >= 75 ? 'bg-green-500/20 text-green-400' :
+                      benchmarkData.percentile_ranking.esg_score >= 50 ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-red-500/20 text-red-400'
+                    }`}>
+                      Top {100 - benchmarkData.percentile_ranking.esg_score}%
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-[#CED4DA] space-y-1">
+                    <div className="flex justify-between">
+                      <span>Industry Average:</span>
+                      <span className="text-white">{benchmarkData.industry_average.esg_score}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Top 10%:</span>
+                      <span className="text-green-400">{benchmarkData.industry_top_10.esg_score}</span>
+                    </div>
+                    <div className="flex justify-between mt-2 pt-2 border-t border-[rgba(255,255,255,0.08)]">
+                      <span>Sample Size:</span>
+                      <span className="text-white">{benchmarkData.sample_size} orgs</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Revenue Forecast Cards */}
           {revenueProjection && (
             <>
