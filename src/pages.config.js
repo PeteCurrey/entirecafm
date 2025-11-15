@@ -31,6 +31,7 @@ import ExecutiveBrief from './pages/ExecutiveBrief';
 import AIAssistant from './pages/AIAssistant';
 import SystemDocumentation from './pages/SystemDocumentation';
 import AILeads from './pages/AILeads';
+import AssetsPredict from './pages/AssetsPredict';
 import Layout from './Layout.jsx';
 
 
@@ -68,6 +69,7 @@ export const PAGES = {
     "AIAssistant": AIAssistant,
     "SystemDocumentation": SystemDocumentation,
     "AILeads": AILeads,
+    "AssetsPredict": AssetsPredict,
 }
 
 export const pagesConfig = {
