@@ -1,261 +1,248 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import {
+  LayoutDashboard,
+  Wrench,
+  DollarSign,
+  FileText,
+  Database,
+  MessageCircle,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle,
+  Clock
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import {
-  Wrench,
-  FileText,
-  DollarSign,
-  Plus,
-  Clock,
-  CheckCircle2,
-  User,
-  Building2,
-  LogOut,
-  Menu,
-  X
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
 
-export default function ClientPortal() {
+export default function ClientPortalPage() {
   const [user, setUser] = useState(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [clientId, setClientId] = useState(null);
 
   useEffect(() => {
     loadUser();
   }, []);
 
   const loadUser = async () => {
-    try {
-      const userData = await base44.auth.me();
-      setUser(userData);
-    } catch (error) {
-      console.error("Error:", error);
+    const userData = await base44.auth.me();
+    setUser(userData);
+    
+    // Get client_id from user metadata or ClientUser entity
+    if (userData.client_id) {
+      setClientId(userData.client_id);
     }
   };
 
-  const { data: jobs = [] } = useQuery({
-    queryKey: ['client-jobs'],
+  const { data: dashboardData, isLoading } = useQuery({
+    queryKey: ['client-dashboard', clientId],
     queryFn: async () => {
-      if (!user) return [];
-      return base44.entities.Job.filter({ client_id: user.id }, '-created_date', 20);
+      if (!clientId) return null;
+      const result = await base44.functions.invoke('getClientDashboard', { client_id: clientId });
+      return result.data?.dashboard;
     },
-    enabled: !!user,
+    enabled: !!clientId,
+    refetchInterval: 30000 // Refresh every 30s
   });
 
-  const { data: quotes = [] } = useQuery({
-    queryKey: ['client-quotes'],
+  const { data: theme } = useQuery({
+    queryKey: ['client-theme', clientId],
     queryFn: async () => {
-      if (!user) return [];
-      return base44.entities.Quote.filter({ client_id: user.id }, '-created_date', 20);
+      if (!clientId) return null;
+      const themes = await base44.entities.ClientPortalTheme.filter({ client_id: clientId });
+      return themes[0] || null;
     },
-    enabled: !!user,
+    enabled: !!clientId
   });
 
-  const { data: invoices = [] } = useQuery({
-    queryKey: ['client-invoices'],
-    queryFn: async () => {
-      if (!user) return [];
-      return base44.entities.Invoice.filter({ client_id: user.id }, '-created_date', 20);
-    },
-    enabled: !!user,
-  });
+  if (isLoading || !dashboardData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0D1117]">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[rgba(255,255,255,0.3)] border-t-white rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#CED4DA]">Loading your portal...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const activeJobs = jobs.filter(j => !['completed', 'cancelled'].includes(j.status));
-  const pendingQuotes = quotes.filter(q => q.status === 'sent');
-  const unpaidInvoices = invoices.filter(i => ['sent', 'overdue'].includes(i.status));
-
-  const statusColors = {
-    raised: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-    assigned: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-    en_route: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
-    on_site: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
-    completed: 'bg-green-500/10 text-green-400 border-green-500/30',
-  };
+  const primaryColor = theme?.primary_color || '#E1467C';
 
   return (
-    <div className="min-h-screen bg-[#0D1117]">
-      {/* Client Header */}
-      <header className="glass-panel border-b border-divider p-4 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl glass-panel flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-white" strokeWidth={1.5} />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-white">Client Portal</h1>
-              {user?.client_details?.company_name && (
-                <p className="text-xs text-body">{user.client_details.company_name}</p>
-              )}
-            </div>
-          </div>
+    <div className="min-h-screen bg-[#0D1117] p-6 lg:p-8">
+      <style>{`
+        .custom-accent { color: ${primaryColor}; }
+        .custom-accent-bg { background-color: ${primaryColor}; }
+        .custom-accent-border { border-color: ${primaryColor}; }
+      `}</style>
 
-          <div className="hidden md:flex items-center gap-4">
-            <Link to={createPageUrl("ClientJobs")}>
-              <Button variant="ghost" className="text-body hover:text-white">
-                Jobs
-              </Button>
-            </Link>
-            <Link to={createPageUrl("ClientQuotes")}>
-              <Button variant="ghost" className="text-body hover:text-white">
-                Quotes
-              </Button>
-            </Link>
-            <Link to={createPageUrl("ClientInvoices")}>
-              <Button variant="ghost" className="text-body hover:text-white">
-                Invoices
-              </Button>
-            </Link>
-            
-            {user && (
-              <div className="flex items-center gap-2 pl-4 border-l border-divider">
-                <div className="w-8 h-8 rounded-full accent-magenta flex items-center justify-center text-white font-bold text-sm">
-                  {user.full_name?.[0]}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => base44.auth.logout()}
-                  className="text-body hover:text-white"
-                >
-                  <LogOut className="w-4 h-4" strokeWidth={1.5} />
-                </Button>
-              </div>
-            )}
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-4 mb-4">
+          {theme?.logo_url && (
+            <img src={theme.logo_url} alt="Logo" className="h-12" />
+          )}
+          <div>
+            <h1 className="text-3xl font-bold text-white">
+              {theme?.welcome_text || 'Welcome to Your Portal'}
+            </h1>
+            <p className="text-[#CED4DA]">Real-time access to your services and data</p>
           </div>
+        </div>
+      </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden text-white"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </Button>
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
+          <div className="flex items-center gap-3 mb-2">
+            <Wrench className="w-5 h-5 text-blue-400" />
+            <div className="text-sm text-[#CED4DA]">Open Jobs</div>
+          </div>
+          <div className="text-3xl font-bold text-white">{dashboardData.jobs_open}</div>
         </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pt-4 border-t border-divider space-y-2">
-            <Link to={createPageUrl("ClientJobs")} className="block">
-              <Button variant="ghost" className="w-full justify-start text-body">
-                Jobs
-              </Button>
-            </Link>
-            <Link to={createPageUrl("ClientQuotes")} className="block">
-              <Button variant="ghost" className="w-full justify-start text-body">
-                Quotes
-              </Button>
-            </Link>
-            <Link to={createPageUrl("ClientInvoices")} className="block">
-              <Button variant="ghost" className="w-full justify-start text-body">
-                Invoices
-              </Button>
-            </Link>
+        <div className={`glass-panel rounded-xl p-5 border ${
+          dashboardData.sla_score >= 90 ? 'border-green-500/30' : 
+          dashboardData.sla_score >= 70 ? 'border-yellow-500/30' : 
+          'border-red-500/30'
+        }`}>
+          <div className="flex items-center gap-3 mb-2">
+            <TrendingUp className="w-5 h-5 custom-accent" />
+            <div className="text-sm text-[#CED4DA]">SLA Score</div>
           </div>
-        )}
-      </header>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8">
-        {/* Welcome */}
-        <div className="glass-panel rounded-2xl p-6 border border-divider">
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Welcome back, {user?.full_name || 'User'}
-          </h2>
-          <p className="text-body">Manage your facilities maintenance and service requests</p>
+          <div className={`text-3xl font-bold ${
+            dashboardData.sla_score >= 90 ? 'text-green-400' : 
+            dashboardData.sla_score >= 70 ? 'text-yellow-400' : 
+            'text-red-400'
+          }`}>
+            {dashboardData.sla_score}%
+          </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="glass-panel rounded-2xl p-6 border border-divider">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
-                <Wrench className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
-              </div>
-            </div>
-            <h3 className="text-3xl font-bold text-white mb-1">{activeJobs.length}</h3>
-            <p className="text-sm text-body">Active Jobs</p>
+        <div className="glass-panel rounded-xl p-5 border border-[rgba(255,255,255,0.08)]">
+          <div className="flex items-center gap-3 mb-2">
+            <DollarSign className="w-5 h-5 text-green-400" />
+            <div className="text-sm text-[#CED4DA]">YTD Spend</div>
           </div>
+          <div className="text-3xl font-bold text-white">
+            £{dashboardData.total_spend_ytd.toLocaleString()}
+          </div>
+        </div>
 
-          <div className="glass-panel rounded-2xl p-6 border border-divider">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
-                <FileText className="w-6 h-6 text-purple-400" strokeWidth={1.5} />
-              </div>
-            </div>
-            <h3 className="text-3xl font-bold text-white mb-1">{pendingQuotes.length}</h3>
-            <p className="text-sm text-body">Quotes Pending</p>
+        <div className={`glass-panel rounded-xl p-5 border ${
+          dashboardData.overdue_invoices > 0 ? 'border-red-500/30' : 'border-green-500/30'
+        }`}>
+          <div className="flex items-center gap-3 mb-2">
+            <AlertCircle className={`w-5 h-5 ${dashboardData.overdue_invoices > 0 ? 'text-red-400' : 'text-green-400'}`} />
+            <div className="text-sm text-[#CED4DA]">Overdue</div>
           </div>
+          <div className={`text-3xl font-bold ${dashboardData.overdue_invoices > 0 ? 'text-red-400' : 'text-green-400'}`}>
+            {dashboardData.overdue_invoices > 0 ? `£${dashboardData.overdue_value.toLocaleString()}` : '£0'}
+          </div>
+        </div>
+      </div>
 
-          <div className="glass-panel rounded-2xl p-6 border border-divider">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-yellow-400" strokeWidth={1.5} />
-              </div>
-            </div>
-            <h3 className="text-3xl font-bold text-white mb-1">{unpaidInvoices.length}</h3>
-            <p className="text-sm text-body">Unpaid Invoices</p>
-          </div>
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* SLA Trend Chart */}
+        <div className="lg:col-span-2 glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+          <h3 className="text-lg font-bold text-white mb-4">SLA Performance (30 Days)</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={dashboardData.sla_trend}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis dataKey="date" stroke="#CED4DA" style={{ fontSize: '12px' }} />
+              <YAxis stroke="#CED4DA" style={{ fontSize: '12px' }} domain={[0, 100]} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(13, 17, 23, 0.95)', 
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '8px'
+                }}
+              />
+              <Line type="monotone" dataKey="score" stroke={primaryColor} strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Link to={createPageUrl("ClientRequestJob")} className="block">
-            <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all h-full">
-              <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center mb-4">
-                <Plus className="w-6 h-6 text-[#E1467C]" strokeWidth={1.5} />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Request New Job</h3>
-              <p className="text-sm text-body">Raise a new maintenance or service request</p>
-            </div>
-          </Link>
-
-          <Link to={createPageUrl("ClientJobs")} className="block">
-            <div className="glass-panel rounded-2xl p-6 border border-divider hover:glass-panel-strong transition-all h-full">
-              <div className="w-12 h-12 rounded-xl glass-panel flex items-center justify-center mb-4">
-                <Wrench className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">View Active Jobs</h3>
-              <p className="text-sm text-body">Track your ongoing maintenance work</p>
-            </div>
-          </Link>
+        <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+          <h3 className="text-lg font-bold text-white mb-4">Quick Actions</h3>
+          <div className="space-y-3">
+            <Link to={createPageUrl("ClientJobs")}>
+              <Button className="w-full justify-start custom-accent-bg hover:opacity-90 text-white">
+                <Wrench className="w-4 h-4 mr-2" />
+                View All Jobs
+              </Button>
+            </Link>
+            <Link to={createPageUrl("ClientRequestJob")}>
+              <Button className="w-full justify-start" variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Raise New Request
+              </Button>
+            </Link>
+            <Link to={createPageUrl("ClientInvoices")}>
+              <Button className="w-full justify-start" variant="outline">
+                <FileText className="w-4 h-4 mr-2" />
+                View Invoices
+              </Button>
+            </Link>
+            <Link to={createPageUrl("ClientDocuments")}>
+              <Button className="w-full justify-start" variant="outline">
+                <Database className="w-4 h-4 mr-2" />
+                Documents & Reports
+              </Button>
+            </Link>
+          </div>
         </div>
+      </div>
 
-        {/* Recent Jobs */}
-        {activeJobs.length > 0 && (
-          <div className="glass-panel rounded-2xl p-6 border border-divider">
-            <h2 className="text-xl font-bold text-white mb-4">Active Jobs</h2>
-            <div className="space-y-3">
-              {activeJobs.slice(0, 5).map((job) => (
-                <Link
-                  key={job.id}
-                  to={createPageUrl("ClientJobDetail") + `?id=${job.id}`}
-                  className="block"
-                >
-                  <div className="glass-panel rounded-xl p-4 border border-divider hover:glass-panel-strong transition-all">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-white">{job.title}</h3>
-                      <Badge className={`${statusColors[job.status]} border ml-4`}>
-                        {job.status.replace('_', ' ')}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-body">
-                      {job.job_number && <span>#{job.job_number}</span>}
-                      {job.scheduled_date && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" strokeWidth={1.5} />
-                          {format(new Date(job.scheduled_date), 'MMM d, yyyy')}
-                        </span>
-                      )}
+      {/* Recent Jobs */}
+      <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+        <h3 className="text-lg font-bold text-white mb-4">Recent Activity</h3>
+        {dashboardData.recent_jobs.length === 0 ? (
+          <p className="text-[#CED4DA] text-center py-8">No recent activity</p>
+        ) : (
+          <div className="space-y-2">
+            {dashboardData.recent_jobs.map(job => (
+              <Link 
+                key={job.id}
+                to={`${createPageUrl("ClientJobDetail")}?id=${job.id}`}
+                className="block glass-panel rounded-lg p-4 border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.15)] transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${
+                      job.status === 'completed' ? 'bg-green-400' :
+                      job.status === 'on_site' ? 'bg-blue-400' :
+                      'bg-yellow-400'
+                    }`} />
+                    <div>
+                      <div className="text-white font-semibold">{job.title}</div>
+                      <div className="text-xs text-[#CED4DA]">
+                        {new Date(job.updated_date).toLocaleDateString()}
+                      </div>
                     </div>
                   </div>
-                </Link>
-              ))}
-            </div>
+                  <div className="flex items-center gap-3">
+                    {job.priority === 'critical' && (
+                      <Badge className="bg-red-500/20 text-red-400 border-red-500/30 border">
+                        {job.priority}
+                      </Badge>
+                    )}
+                    <Badge className={`${
+                      job.status === 'completed' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                      job.status === 'on_site' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                      'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                    } border`}>
+                      {job.status}
+                    </Badge>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </div>
