@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -137,111 +138,164 @@ export default function Layout({ children, currentPageName }) {
         <OnboardingWalkthrough onComplete={handleCompleteOnboarding} />
       )}
 
-      <div className="min-h-screen relative overflow-hidden bg-[var(--ent-bg)]">
-        <div className="flex h-screen">
-          <aside className="hidden lg:flex lg:flex-col lg:w-60 ent-card border-r border-[var(--ent-border)] overflow-y-auto">
-            <div className="p-6 border-b border-[var(--ent-border)]">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#E41E65] to-[#C13666] flex items-center justify-center" style={{ boxShadow: 'var(--ent-glow-mag)' }}>
-                  <Wrench className="w-4 h-4 text-white" strokeWidth={2} />
-                </div>
-                <span className="text-sm font-bold text-[var(--ent-text)] tracking-wide">
-                  ENTIRE<span className="text-[#E41E65]">CAFM</span>
-                </span>
-              </div>
-              {user && (
-                <div className="mt-3 text-xs text-[var(--ent-muted)]">
-                  {user.full_name}
-                  <div className="text-[10px] uppercase">{userRole}</div>
-                </div>
-              )}
-            </div>
+      <div className="min-h-screen relative overflow-hidden bg-[#0D1117]">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap');
+          
+          * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          }
+          
+          h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+          }
+          
+          code, pre, .font-mono {
+            font-family: 'Roboto Mono', monospace;
+          }
+        
+        .glass-panel {
+          background: rgba(255, 255, 255, 0.04);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .glass-panel-strong {
+          background: rgba(255, 255, 255, 0.06);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
 
-            <nav className="flex-1 py-4">
+        .sidebar-nav-item {
+          position: relative;
+          padding: 10px 16px;
+          margin-bottom: 2px;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+          border-left: 3px solid transparent;
+        }
+
+        .sidebar-nav-item:hover {
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-nav-item.active {
+          border-left-color: #E1467C;
+          background: rgba(255, 255, 255, 0.06);
+          font-weight: 600;
+        }
+
+        .section-label {
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: rgba(206, 212, 218, 0.5);
+          margin-bottom: 8px;
+          margin-top: 24px;
+          padding-left: 16px;
+        }
+      `}</style>
+
+      <div className="flex h-screen">
+        <aside className="hidden lg:flex lg:flex-col lg:w-60 glass-panel border-r border-[rgba(255,255,255,0.08)] overflow-y-auto">
+          <div className="p-6 border-b border-[rgba(255,255,255,0.08)]">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#E41E65] to-[#C13666] flex items-center justify-center magenta-glow">
+                <Wrench className="w-4 h-4 text-white" strokeWidth={2} />
+              </div>
+              <span className="text-sm font-bold text-white tracking-wide">
+                ENTIRE<span className="text-[#E41E65]">CAFM</span>
+              </span>
+            </div>
+            {user && (
+              <div className="mt-3 text-xs text-[#CED4DA]">
+                {user.full_name}
+                <div className="text-[10px] text-[#8B949E] uppercase">{userRole}</div>
+              </div>
+            )}
+          </div>
+
+          <nav className="flex-1 py-4">
+            {filteredSections.map((section) => (
+              <div key={section.title}>
+                <div className="section-label">{section.title}</div>
+                {section.items.map((item) => {
+                  const isActive = location.pathname === item.url;
+                  return (
+                    <Link
+                      key={item.title}
+                      to={item.url}
+                      className={`sidebar-nav-item flex items-center gap-3 ${isActive ? 'active' : ''}`}
+                    >
+                      <item.icon className="w-4 h-4 text-[#CED4DA]" strokeWidth={1.5} />
+                      <span className="text-sm text-[#CED4DA]">
+                        {item.title}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </nav>
+        </aside>
+
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0D1117] border-b border-[rgba(255,255,255,0.08)] p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#E41E65] to-[#C13666] flex items-center justify-center">
+                <Wrench className="w-4 h-4 text-white" strokeWidth={2} />
+              </div>
+              <span className="text-sm font-bold text-white">
+                ENTIRE<span className="text-[#E41E65]">CAFM</span>
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-white"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </Button>
+          </div>
+        </div>
+
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-40 glass-panel-strong pt-20 overflow-y-auto">
+            <nav className="p-6 space-y-2">
               {filteredSections.map((section) => (
                 <div key={section.title}>
-                  <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[var(--ent-muted)] opacity-50 mb-2 mt-6 px-4">
-                    {section.title}
-                  </div>
+                  <div className="section-label">{section.title}</div>
                   {section.items.map((item) => {
                     const isActive = location.pathname === item.url;
                     return (
                       <Link
                         key={item.title}
                         to={item.url}
-                        className={`flex items-center gap-3 px-4 py-2.5 mx-2 mb-1 rounded-xl transition-all ${
-                          isActive 
-                            ? 'bg-[var(--ent-panel)] border-l-2 border-[#E41E65] text-[var(--ent-text)] font-medium' 
-                            : 'text-[var(--ent-muted)] hover:bg-[rgba(255,255,255,0.03)]'
-                        }`}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`sidebar-nav-item flex items-center gap-3 ${isActive ? 'active' : ''}`}
                       >
-                        <item.icon className="w-4 h-4" strokeWidth={1.5} />
-                        <span className="text-sm">{item.title}</span>
+                        <item.icon className="w-4 h-4 text-[#CED4DA]" strokeWidth={1.5} />
+                        <span className="text-sm text-[#CED4DA]">
+                          {item.title}
+                        </span>
                       </Link>
                     );
                   })}
                 </div>
               ))}
             </nav>
-          </aside>
-
-          <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[var(--ent-bg)] border-b border-[var(--ent-border)] p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#E41E65] to-[#C13666] flex items-center justify-center">
-                  <Wrench className="w-4 h-4 text-white" strokeWidth={2} />
-                </div>
-                <span className="text-sm font-bold text-white">
-                  ENTIRE<span className="text-[#E41E65]">CAFM</span>
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-white"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </Button>
-            </div>
           </div>
+        )}
 
-          {mobileMenuOpen && (
-            <div className="lg:hidden fixed inset-0 z-40 ent-card pt-20 overflow-y-auto">
-              <nav className="p-6 space-y-2">
-                {filteredSections.map((section) => (
-                  <div key={section.title}>
-                    <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[var(--ent-muted)] opacity-50 mb-2 mt-6">
-                      {section.title}
-                    </div>
-                    {section.items.map((item) => {
-                      const isActive = location.pathname === item.url;
-                      return (
-                        <Link
-                          key={item.title}
-                          to={item.url}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-                            isActive 
-                              ? 'bg-[var(--ent-panel)] border-l-2 border-[#E41E65] text-[var(--ent-text)] font-medium' 
-                              : 'text-[var(--ent-muted)] hover:bg-[rgba(255,255,255,0.03)]'
-                          }`}
-                        >
-                          <item.icon className="w-4 h-4" strokeWidth={1.5} />
-                          <span className="text-sm">{item.title}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                ))}
-              </nav>
-            </div>
-          )}
-
-          <main className="flex-1 overflow-auto lg:pt-0 pt-20">
-            {children}
-          </main>
-        </div>
+        <main className="flex-1 overflow-auto lg:pt-0 pt-20">
+          {children}
+        </main>
+      </div>
       </div>
     </>
   );

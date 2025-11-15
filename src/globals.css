@@ -1,5 +1,4 @@
-css
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,36 +6,46 @@ css
 
 @layer base {
   :root {
-    /* Lovable Theme - EntireCAFM */
-    --ent-bg: #0B0B0D;
-    --ent-panel: #121216;
-    --ent-border: rgba(255, 255, 255, 0.06);
-    --ent-text: #F5F7FA;
-    --ent-muted: #96A0AA;
+    /* EntireCAFM Brand Colors */
+    --entirefm-primary: #0E0E11;
+    --entirefm-secondary: #191921;
+    --entirefm-magenta: #E41E65;
+    --entirefm-accent: #27B3F7;
+    --entirefm-text: #FFFFFF;
+    --entirefm-text-secondary: #CED4DA;
+    --entirefm-text-muted: #8B949E;
     
-    --ent-magenta: #E41E65;
-    --ent-teal: #00B4A0;
-    --ent-glow-mag: 0 10px 40px rgba(228, 30, 101, 0.25);
-    --ent-glow-teal: 0 10px 40px rgba(0, 180, 160, 0.22);
+    /* Glass Panel Effect */
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-bg-strong: rgba(255, 255, 255, 0.06);
+    --glass-border-strong: rgba(255, 255, 255, 0.1);
+
+    /* Status Colors */
+    --status-success: #10B981;
+    --status-warning: #F59E0B;
+    --status-danger: #EF4444;
+    --status-info: #3B82F6;
     
-    --ent-radius: 18px;
-    --ent-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset,
-                  0 8px 30px rgba(0, 0, 0, 0.35);
+    /* Gradients */
+    --bg-gradient: linear-gradient(145deg, #0E0E11 0%, #191921 100%);
+    --magenta-gradient: linear-gradient(135deg, #E41E65 0%, #C13666 100%);
   }
 
   * {
-    font-family: 'Montserrat', -apple-system, BlinkMacMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
-  html, body {
-    background: var(--ent-bg);
-    color: var(--ent-text);
+  body {
+    background: var(--entirefm-primary);
+    background: var(--bg-gradient);
+    color: var(--entirefm-text);
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Montserrat', sans-serif;
     font-weight: 600;
-    color: var(--ent-text);
+    color: var(--entirefm-text);
   }
 
   code, pre, .font-mono {
@@ -47,58 +56,150 @@ css
 @layer components {
   /* Glass Panel Components */
   .glass-panel {
-    background: rgba(18, 18, 22, 0.95);
+    background: var(--glass-bg);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid var(--ent-border);
+    border: 1px solid var(--glass-border);
   }
 
   .glass-panel-strong {
-    background: rgba(18, 18, 22, 0.98);
+    background: var(--glass-bg-strong);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--ent-border);
+    border: 1px solid var(--glass-border-strong);
   }
 
-  /* Lovable Card */
-  .ent-card {
-    background: var(--ent-panel);
-    border: 1px solid var(--ent-border);
-    border-radius: var(--ent-radius);
-    box-shadow: var(--ent-shadow);
+  /* Magenta Glow Effect */
+  .magenta-glow {
+    box-shadow: 0 0 20px rgba(228, 30, 101, 0.3);
   }
 
-  .ent-card-mag {
-    box-shadow: var(--ent-glow-mag);
+  .magenta-glow-strong {
+    box-shadow: 0 0 30px rgba(228, 30, 101, 0.5);
   }
 
-  .ent-card-teal {
-    box-shadow: var(--ent-glow-teal);
+  /* Accent Glow Effect */
+  .accent-glow {
+    box-shadow: 0 0 20px rgba(39, 179, 247, 0.3);
+  }
+
+  /* Animated Pulse */
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(39, 179, 247, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(39, 179, 247, 0.6);
+    }
+  }
+
+  /* EntireCAFM Button Styles */
+  .btn-primary {
+    background: var(--entirefm-magenta);
+    color: white;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background: #C13666;
+    box-shadow: 0 0 20px rgba(228, 30, 101, 0.4);
   }
 
   /* Status Badges */
   .badge-success {
-    background: rgba(0, 180, 160, 0.15);
-    color: var(--ent-teal);
-    border: 1px solid rgba(0, 180, 160, 0.3);
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--status-success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
   }
 
   .badge-warning {
-    background: rgba(245, 158, 11, 0.15);
-    color: #F59E0B;
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--status-warning);
     border: 1px solid rgba(245, 158, 11, 0.3);
   }
 
   .badge-danger {
-    background: rgba(228, 30, 101, 0.15);
-    color: var(--ent-magenta);
-    border: 1px solid rgba(228, 30, 101, 0.3);
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--status-danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
   }
 
   .badge-info {
-    background: rgba(59, 130, 246, 0.15);
-    color: #3B82F6;
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--status-info);
     border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
+  /* Data Cards */
+  .data-card {
+    @apply glass-panel rounded-2xl p-6 transition-all;
+  }
+
+  .data-card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  /* Metric Value Styling */
+  .metric-value {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  /* Section Titles */
+  .section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--entirefm-text);
+    border-left: 4px solid var(--entirefm-magenta);
+    padding-left: 12px;
+  }
+
+  /* Sidebar Navigation Active State */
+  .sidebar-nav-item {
+    position: relative;
+    padding: 10px 16px;
+    margin-bottom: 2px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+  }
+
+  .sidebar-nav-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .sidebar-nav-item.active {
+    border-left-color: var(--entirefm-magenta);
+    background: rgba(255, 255, 255, 0.06);
+    font-weight: 600;
+  }
+
+  /* Chart Styling */
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Confetti Animation */
+  @keyframes confetti {
+    0% { transform: translateY(0) rotateZ(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0; }
+  }
+
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: var(--entirefm-magenta);
+    animation: confetti 3s ease-in forwards;
+    z-index: 9999;
   }
 }
 

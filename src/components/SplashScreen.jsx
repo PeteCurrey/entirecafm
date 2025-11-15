@@ -6,8 +6,8 @@ export default function SplashScreen({ oncePerSession = true, minMs = 3000 }) {
   const [show, setShow] = useState(true);
   const [theme, setTheme] = useState({ 
     logo: null, 
-    primary: "#0B0B0D", 
-    accent: "#E41E65", 
+    primary: "#0E0E11", 
+    accent: "#E1467C", 
     welcome: "AI Operations Platform" 
   });
 
@@ -59,7 +59,7 @@ export default function SplashScreen({ oncePerSession = true, minMs = 3000 }) {
           }}
         />
 
-        {/* Logo / Wordmark with glow */}
+        {/* Logo / Wordmark */}
         <div className="flex flex-col items-center gap-3">
           {theme.logo ? (
             <motion.img
@@ -69,7 +69,6 @@ export default function SplashScreen({ oncePerSession = true, minMs = 3000 }) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6 }}
               className="h-14 w-auto object-contain"
-              style={{ filter: `drop-shadow(0 10px 40px ${theme.accent}40)` }}
             />
           ) : (
             <motion.div
@@ -77,7 +76,6 @@ export default function SplashScreen({ oncePerSession = true, minMs = 3000 }) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6 }}
               className="text-white/90 tracking-[0.35em] uppercase text-base"
-              style={{ textShadow: `0 10px 40px ${theme.accent}40` }}
             >
               ENTIRECAFM
             </motion.div>
