@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -30,6 +31,9 @@ import {
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import BudgetAllocator from "../components/marketing/BudgetAllocator";
 import QuoteOptimiserPanel from "../components/marketing/QuoteOptimiserPanel";
+import SEOAnalyticsTab from "../components/marketing/SEOAnalyticsTab";
+import ContentEngineTab from "../components/marketing/ContentEngineTab";
+import SocialAutomationTab from "../components/marketing/SocialAutomationTab";
 
 // WebSocket
 let ws = null;
@@ -408,7 +412,7 @@ export default function AIMarketingPage() {
         </div>
       </div>
 
-      {/* Tabs: Dashboard | Optimisation */}
+      {/* Tabs: Dashboard | Optimisation | SEO | Content | Social */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="glass-panel border-[rgba(255,255,255,0.08)]">
           <TabsTrigger 
@@ -424,6 +428,27 @@ export default function AIMarketingPage() {
           >
             <Sliders className="w-4 h-4 mr-2" strokeWidth={1.5} />
             Optimisation
+          </TabsTrigger>
+          <TabsTrigger 
+            value="seo"
+            className="data-[state=active]:bg-[#E1467C] data-[state=active]:text-white"
+          >
+            <TrendingUp className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            SEO Analytics
+          </TabsTrigger>
+          <TabsTrigger 
+            value="content"
+            className="data-[state=active]:bg-[#E1467C] data-[state=active]:text-white"
+          >
+            <Sparkles className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Content Engine
+          </TabsTrigger>
+          <TabsTrigger 
+            value="social"
+            className="data-[state=active]:bg-[#E1467C] data-[state=active]:text-white"
+          >
+            <Users className="w-4 h-4 mr-2" strokeWidth={1.5} />
+            Social Automation
           </TabsTrigger>
         </TabsList>
 
@@ -770,6 +795,18 @@ export default function AIMarketingPage() {
               }}
             />
           </div>
+        </TabsContent>
+
+        <TabsContent value="seo" className="space-y-6 mt-6">
+          {user?.org_id && <SEOAnalyticsTab orgId={user.org_id} />}
+        </TabsContent>
+
+        <TabsContent value="content" className="space-y-6 mt-6">
+          {user?.org_id && <ContentEngineTab orgId={user.org_id} />}
+        </TabsContent>
+
+        <TabsContent value="social" className="space-y-6 mt-6">
+          {user?.org_id && <SocialAutomationTab orgId={user.org_id} />}
         </TabsContent>
       </Tabs>
     </div>
