@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { base44 } from "@/api/base44Client";
@@ -13,9 +14,6 @@ import 'leaflet/dist/leaflet.css';
  * - Position interpolation (lerp) for smooth movement
  * - Rate-limited updates (max 1 per 5s unless >100m delta)
  */
-
-// WebSocket relay endpoint
-const WS_RELAY_URL = 'wss://ws.entirecafm.io';
 
 // Custom marker icons
 const createEngineerIcon = (initials, status) => {
@@ -149,19 +147,16 @@ export default function LiveMap({ orgId, compact = false, onEngineerClick, onJob
 
     const connectWebSocket = async () => {
       try {
+        // Get Base44 session token
         const user = await base44.auth.me();
-        
-        // Get JWT token from localStorage or Base44 session
-        let token = localStorage.getItem('base44_token');
-        
-        // If not in localStorage, try to get from session
-        if (!token) {
-          // For Base44 apps, the token might be in a different location
-          // This is a fallback - adjust based on your auth implementation
-          token = 'temp-token-for-testing';
+        if (!user) {
+          console.error('No authenticated user');
+          return;
         }
         
-        const wsUrl = `${WS_RELAY_URL}?token=${token}&orgId=${orgId}`;
+        // Construct WebSocket URL (same host, /ws endpoint handled by wsRelay function)
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws?orgId=${orgId}`;
         
         console.log(`🔌 Connecting to WebSocket: ${wsUrl}`);
         ws.current = new WebSocket(wsUrl);
@@ -196,7 +191,6 @@ export default function LiveMap({ orgId, compact = false, onEngineerClick, onJob
           console.log('WebSocket disconnected');
           setWsConnected(false);
           
-          // Exponential backoff reconnection
           reconnectAttempts.current++;
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
           console.log(`Reconnecting in ${delay}ms...`);
@@ -206,8 +200,6 @@ export default function LiveMap({ orgId, compact = false, onEngineerClick, onJob
       } catch (error) {
         console.error('WebSocket connection failed:', error);
         setWsConnected(false);
-        
-        // Retry after delay
         setTimeout(connectWebSocket, 5000);
       }
     };
