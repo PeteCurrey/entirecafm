@@ -30,6 +30,7 @@ import EngineerSimulator from './pages/EngineerSimulator';
 import ExecutiveBrief from './pages/ExecutiveBrief';
 import AIAssistant from './pages/AIAssistant';
 import SystemDocumentation from './pages/SystemDocumentation';
+import AILeads from './pages/AILeads';
 import Layout from './Layout.jsx';
 
 
@@ -66,6 +67,7 @@ export const PAGES = {
     "ExecutiveBrief": ExecutiveBrief,
     "AIAssistant": AIAssistant,
     "SystemDocumentation": SystemDocumentation,
+    "AILeads": AILeads,
 }
 
 export const pagesConfig = {
