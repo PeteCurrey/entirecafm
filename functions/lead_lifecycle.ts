@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
 
     const results = {
       follow_ups_sent: 0,
-      attributions_updated: 0,
+      leads_created: 0,
       errors: []
     };
 
@@ -40,78 +40,125 @@ Deno.serve(async (req) => {
 
       for (const quote of staleQuotes) {
         try {
-          // Get client details
-          const client = await base44.asServiceRole.entities.Client.filter({ 
-            id: quote.client_id 
-          });
-          
-          if (!client || client.length === 0) continue;
-          const clientData = client[0];
-
-          // Check if follow-up already sent recently (avoid spam)
-          const recentEvents = await base44.asServiceRole.entities.LeadEvent.filter({
+          // Get or create lead profile
+          let leadProfile = (await base44.asServiceRole.entities.LeadProfile.filter({
             org_id,
-            client_id: quote.client_id,
-            event_type: 'FOLLOW_UP'
+            client_id: quote.client_id
+          }))[0];
+
+          const client = (await base44.asServiceRole.entities.Client.filter({ 
+            id: quote.client_id 
+          }))[0];
+          
+          if (!client) continue;
+
+          if (!leadProfile) {
+            leadProfile = await base44.asServiceRole.entities.LeadProfile.create({
+              org_id,
+              client_id: quote.client_id,
+              contact_name: client.primary_contact_name,
+              contact_email: client.primary_contact_email,
+              contact_phone: client.primary_contact_phone,
+              first_contact_date: quote.created_date,
+              last_activity_date: quote.sent_date,
+              lead_score: 50,
+              status: 'ACTIVE'
+            });
+            results.leads_created++;
+          }
+
+          // Check if follow-up already sent recently
+          const recentEvents = await base44.asServiceRole.entities.LeadJourneyEvent.filter({
+            lead_id: leadProfile.id,
+            event_type: 'FOLLOW_UP_SENT'
           });
 
           const recentFollowUp = recentEvents.find(e => {
-            const eventDate = new Date(e.event_date);
+            const eventDate = new Date(e.event_timestamp);
             const sevenDaysAgo = new Date();
             sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
             return eventDate >= sevenDaysAgo;
           });
 
-          if (recentFollowUp) {
-            console.log(`Skipping ${clientData.name} - follow-up sent recently`);
-            continue;
-          }
+          if (recentFollowUp) continue;
 
-          // Generate AI-powered follow-up email
-          const emailContent = await base44.integrations.Core.InvokeLLM({
-            prompt: `Write a professional, friendly follow-up email for a quote that was sent 30+ days ago.
+          // Get template or generate AI email
+          const template = (await base44.asServiceRole.entities.LeadEmailTemplate.filter({
+            org_id,
+            trigger_condition: 'QUOTE_NOT_APPROVED_30D',
+            is_active: true
+          }))[0];
 
-Client: ${clientData.name}
+          let subject, body;
+
+          if (template) {
+            const daysSince = Math.floor((new Date() - new Date(quote.sent_date)) / (1000 * 60 * 60 * 24));
+            subject = template.subject
+              .replace('{{client_name}}', client.name)
+              .replace('{{quote_number}}', quote.quote_number || quote.id.slice(0, 8))
+              .replace('{{days_since_quote}}', daysSince);
+            
+            body = template.body_html
+              .replace('{{client_name}}', client.name)
+              .replace('{{quote_number}}', quote.quote_number || quote.id.slice(0, 8))
+              .replace('{{quote_value}}', `£${quote.total?.toLocaleString() || '0'}`)
+              .replace('{{days_since_quote}}', daysSince);
+          } else {
+            const aiEmail = await base44.integrations.Core.InvokeLLM({
+              prompt: `Write a professional follow-up email for a quote that was sent 30+ days ago.
+
+Client: ${client.name}
 Quote: ${quote.title}
 Quote Total: £${quote.total}
 
 The email should:
 - Be warm and helpful, not pushy
-- Check if they need any clarification or have questions
+- Check if they need clarification or have questions
 - Offer to adjust the quote if needed
 - Include a clear call-to-action
 - Be concise (under 150 words)
 - Professional but personable tone
 
-Return as object with 'subject' and 'body' fields.`,
-            response_json_schema: {
-              type: "object",
-              properties: {
-                subject: { type: "string" },
-                body: { type: "string" }
+Return JSON with 'subject' and 'body' fields.`,
+              response_json_schema: {
+                type: "object",
+                properties: {
+                  subject: { type: "string" },
+                  body: { type: "string" }
+                }
               }
-            }
-          });
+            });
+
+            subject = aiEmail.subject;
+            body = aiEmail.body;
+          }
 
           // Send email
           await base44.integrations.Core.SendEmail({
-            to: clientData.primary_contact_email,
-            subject: emailContent.subject,
-            body: emailContent.body
+            to: client.primary_contact_email,
+            subject,
+            body
           });
 
-          // Log follow-up to lead_event
-          await base44.asServiceRole.entities.LeadEvent.create({
+          // Log journey event
+          await base44.asServiceRole.entities.LeadJourneyEvent.create({
             org_id,
-            client_id: quote.client_id,
-            quote_id: quote.id,
-            event_type: 'FOLLOW_UP',
-            event_date: new Date().toISOString(),
-            event_value: quote.total,
-            metadata: {
-              email_subject: emailContent.subject,
-              follow_up_reason: 'quote_stale_30d'
+            lead_id: leadProfile.id,
+            event_type: 'FOLLOW_UP_SENT',
+            event_timestamp: new Date().toISOString(),
+            event_value: {
+              quote_id: quote.id,
+              subject,
+              trigger: 'quote_not_approved_30d'
             }
+          });
+
+          // Update lead profile
+          await base44.asServiceRole.entities.LeadProfile.update(leadProfile.id, {
+            last_activity_date: new Date().toISOString(),
+            status: 'DORMANT',
+            lead_score: Math.max(0, (leadProfile.lead_score || 50) - 10),
+            next_action: 'Awaiting quote approval response'
           });
 
           results.follow_ups_sent++;
@@ -126,97 +173,10 @@ Return as object with 'subject' and 'body' fields.`,
       }
     }
 
-    if (action === 'attribution' || action === 'all') {
-      // Find paid invoices without lead source attribution
-      const invoices = await base44.asServiceRole.entities.Invoice.filter({
-        org_id,
-        status: 'paid'
-      });
-
-      for (const invoice of invoices) {
-        try {
-          // Check if attribution already exists
-          const existingAttribution = await base44.asServiceRole.entities.LeadEvent.filter({
-            org_id,
-            client_id: invoice.client_id,
-            event_type: 'INVOICE_PAID',
-            invoice_id: invoice.id
-          });
-
-          if (existingAttribution.length > 0) {
-            continue; // Already attributed
-          }
-
-          // Find the lead source for this client
-          const leadEvents = await base44.asServiceRole.entities.LeadEvent.filter({
-            org_id,
-            client_id: invoice.client_id,
-            event_type: 'ENQUIRY'
-          });
-
-          if (leadEvents.length === 0) {
-            // No lead source found, mark as 'Direct'
-            await base44.asServiceRole.entities.LeadEvent.create({
-              org_id,
-              client_id: invoice.client_id,
-              invoice_id: invoice.id,
-              event_type: 'INVOICE_PAID',
-              event_date: invoice.paid_date || new Date().toISOString(),
-              event_value: invoice.total,
-              source_id: null,
-              metadata: {
-                source: 'Direct',
-                invoice_number: invoice.invoice_number
-              }
-            });
-          } else {
-            // Use the original lead source
-            const firstEnquiry = leadEvents.sort((a, b) => 
-              new Date(a.event_date) - new Date(b.event_date)
-            )[0];
-
-            await base44.asServiceRole.entities.LeadEvent.create({
-              org_id,
-              client_id: invoice.client_id,
-              invoice_id: invoice.id,
-              event_type: 'INVOICE_PAID',
-              event_date: invoice.paid_date || new Date().toISOString(),
-              event_value: invoice.total,
-              source_id: firstEnquiry.source_id,
-              metadata: {
-                invoice_number: invoice.invoice_number,
-                original_enquiry_date: firstEnquiry.event_date
-              }
-            });
-          }
-
-          results.attributions_updated++;
-
-        } catch (error) {
-          console.error(`Error attributing invoice ${invoice.id}:`, error);
-          results.errors.push({
-            invoice_id: invoice.id,
-            error: error.message
-          });
-        }
-      }
-    }
-
-    // Create audit log
-    await base44.asServiceRole.entities.AuditLog.create({
-      org_id,
-      user_id: user.id,
-      action: 'CREATE',
-      entity_type: 'LeadLifecycle',
-      entity_id: org_id,
-      new_values: results,
-      timestamp: new Date().toISOString()
-    });
-
     return Response.json({
       success: true,
       ...results,
-      message: `Sent ${results.follow_ups_sent} follow-ups, updated ${results.attributions_updated} attributions`
+      message: `Sent ${results.follow_ups_sent} follow-ups, created ${results.leads_created} lead profiles`
     });
 
   } catch (error) {
