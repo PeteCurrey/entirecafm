@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getTheme } from "../lib/getTheme";
+import { getTheme } from "./lib/getTheme";
 
 export default function SplashScreen({ oncePerSession = true, minMs = 3000 }) {
   const [show, setShow] = useState(true);

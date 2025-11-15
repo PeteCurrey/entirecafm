@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,10 +8,12 @@ import {
   Calendar,
   ChevronRight
 } from "lucide-react";
-import HeroMap from "../components/dashboard/HeroMap";
-import WorkloadHeatmap from "../components/dashboard/WorkloadHeatmap";
-import ActivityFeed from "../components/dashboard/ActivityFeed";
 import TopNav from "../components/dashboard/TopNav";
+
+// Lazy-load heavy components
+const HeroMap = lazy(() => import("../components/dashboard/HeroMap"));
+const WorkloadHeatmap = lazy(() => import("../components/dashboard/WorkloadHeatmap"));
+const ActivityFeed = lazy(() => import("../components/dashboard/ActivityFeed"));
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -76,8 +78,10 @@ export default function Dashboard() {
       
       <div className="px-6 py-6 max-w-[1680px] mx-auto">
         <div className="space-y-6">
-          {/* Hero Map - Full Width */}
-          <HeroMap />
+          {/* Hero Map - Lazy Loaded */}
+          <Suspense fallback={<div className="glass-panel rounded-2xl h-64 border border-[rgba(255,255,255,0.08)] animate-pulse" />}>
+            <HeroMap />
+          </Suspense>
 
           {/* KPI Cards - Row of 4 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -111,7 +115,9 @@ export default function Dashboard() {
 
           {/* Engineer Capacity Heatmap & Job Pipeline */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <WorkloadHeatmap />
+            <Suspense fallback={<div className="glass-panel rounded-2xl h-64 border border-[rgba(255,255,255,0.08)] animate-pulse" />}>
+              <WorkloadHeatmap />
+            </Suspense>
             
             {/* Job Pipeline */}
             <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
@@ -141,8 +147,10 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Activity Feed */}
-          <ActivityFeed />
+          {/* Activity Feed - Lazy Loaded */}
+          <Suspense fallback={<div className="glass-panel rounded-2xl h-96 border border-[rgba(255,255,255,0.08)] animate-pulse" />}>
+            <ActivityFeed />
+          </Suspense>
         </div>
       </div>
 
