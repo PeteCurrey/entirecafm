@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { requirePermission } from './rbacCheck.js';
 
@@ -144,7 +143,7 @@ Deno.serve(async (req) => {
     // ===== 2. ENGINEER UTILISATION =====
     
     const engineersInOrg = engineers.filter(u => 
-      u.role === 'user' // Assuming 'user' role is for engineers
+      u.role === 'engineer' || u.email?.includes('@') // Engineers or all users with email
     );
 
     const jobsNext48h = activeJobs.filter(j => {

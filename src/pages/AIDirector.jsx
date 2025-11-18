@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -164,7 +163,10 @@ export default function AIDirectorPage() {
   };
 
   const loadDashboard = async () => {
-    if (!user?.org_id) return;
+    if (!user?.org_id) {
+      setError('No organization ID found');
+      return;
+    }
     
     setIsLoadingDashboard(true);
     setError(null);
@@ -176,21 +178,29 @@ export default function AIDirectorPage() {
       
       console.log('📊 Dashboard response:', result);
       
-      if (result.data && result.data.success) {
-        setDashboardData(result.data);
-        setLastUpdated(new Date());
-        console.log('✅ Dashboard loaded successfully');
+      if (result?.data) {
+        if (result.data.success) {
+          setDashboardData(result.data);
+          setLastUpdated(new Date());
+          console.log('✅ Dashboard loaded successfully');
+          setError(null);
+        } else if (result.data.error) {
+          console.error('❌ Dashboard error:', result.data.error);
+          setError(result.data.error);
+        } else {
+          console.error('❌ Unexpected response:', result.data);
+          setError('Unexpected response format');
+        }
       } else {
-        const errorMsg = result.data?.error || 'Invalid response format';
-        console.error('❌ Dashboard load failed:', errorMsg);
-        setError(errorMsg);
+        console.error('❌ No data in response');
+        setError('No data received from server');
       }
       
       queryClient.invalidateQueries(['revenue-projection']);
       queryClient.invalidateQueries(['benchmarks']);
     } catch (error) {
       console.error("❌ Error loading dashboard:", error);
-      setError(error.message || 'Failed to load dashboard');
+      setError(error.response?.data?.error || error.message || 'Failed to load dashboard');
     } finally {
       setIsLoadingDashboard(false);
     }
