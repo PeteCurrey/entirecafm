@@ -167,7 +167,7 @@ export default function AIDirectorPage() {
       setError('No organization ID found');
       return;
     }
-    
+
     setIsLoadingDashboard(true);
     setError(null);
     try {
@@ -175,10 +175,11 @@ export default function AIDirectorPage() {
       const result = await base44.functions.invoke('aiDirectorDashboard', {
         org_id: user.org_id
       });
-      
+
       console.log('📊 Dashboard response:', result);
-      
+
       if (result?.data) {
+        // Backend returns {success: true, ...dashboardData}
         if (result.data.success) {
           setDashboardData(result.data);
           setLastUpdated(new Date());
@@ -186,7 +187,7 @@ export default function AIDirectorPage() {
           setError(null);
         } else if (result.data.error) {
           console.error('❌ Dashboard error:', result.data.error);
-          setError(result.data.error);
+          setError(`Backend error: ${result.data.error}${result.data.stack ? '\n' + result.data.stack : ''}`);
         } else {
           console.error('❌ Unexpected response:', result.data);
           setError('Unexpected response format');
@@ -195,12 +196,14 @@ export default function AIDirectorPage() {
         console.error('❌ No data in response');
         setError('No data received from server');
       }
-      
+
       queryClient.invalidateQueries(['revenue-projection']);
       queryClient.invalidateQueries(['benchmarks']);
     } catch (error) {
       console.error("❌ Error loading dashboard:", error);
-      setError(error.response?.data?.error || error.message || 'Failed to load dashboard');
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to load dashboard';
+      const errorDetails = error.response?.data?.stack || '';
+      setError(`${errorMsg}${errorDetails ? '\n\nDetails: ' + errorDetails : ''}`);
     } finally {
       setIsLoadingDashboard(false);
     }

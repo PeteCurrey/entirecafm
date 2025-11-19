@@ -69,14 +69,29 @@ function calculateClientHealthScore(client, clientData) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    
+    // Check if user is authenticated
+    let user;
+    try {
+      user = await base44.auth.me();
+    } catch (authError) {
+      console.error('Authentication failed:', authError);
+      return Response.json({ error: 'Authentication failed: ' + authError.message }, { status: 401 });
     }
 
+    if (!user) {
+      return Response.json({ error: 'Unauthorized - no user found' }, { status: 401 });
+    }
+
+    console.log(`👤 User authenticated: ${user.email}, role: ${user.role}`);
+
     // RBAC check - only admins can access
-    requirePermission(user, 'aiDirectorDashboard');
+    try {
+      requirePermission(user, 'aiDirectorDashboard');
+    } catch (rbacError) {
+      console.error('RBAC check failed:', rbacError);
+      return Response.json({ error: 'Access denied: ' + rbacError.message }, { status: 403 });
+    }
 
     // Get org_id from request or user
     let org_id = user.org_id || 'default-org';
@@ -86,8 +101,8 @@ Deno.serve(async (req) => {
       if (body.org_id) {
         org_id = body.org_id;
       }
-    } catch {
-      // No body or invalid JSON, use default
+    } catch (parseError) {
+      console.log('Could not parse request body, using user org_id:', parseError.message);
     }
 
     console.log(`📊 Generating Director Dashboard for org: ${org_id}`);
