@@ -1,13 +1,18 @@
 import React, { useState, useEffect, Suspense, lazy } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import {
   Wrench,
   Clock,
   AlertCircle,
   Calendar,
-  ChevronRight
+  ChevronRight,
+  Upload,
+  Sparkles
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import TopNav from "../components/dashboard/TopNav";
 
 // Lazy-load heavy components
@@ -17,6 +22,7 @@ const ActivityFeed = lazy(() => import("../components/dashboard/ActivityFeed"));
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadUser();
@@ -72,12 +78,32 @@ export default function Dashboard() {
     { label: 'Invoiced', count: jobs.filter(j => j.invoice_id).length, color: 'from-emerald-500/20 to-emerald-600/20 border-emerald-500/30' },
   ];
 
+  const hasNoData = jobs.length === 0 && ppmSchedules.length === 0;
+
   return (
     <>
       <TopNav user={user} />
       
       <div className="px-6 py-6 max-w-[1680px] mx-auto">
         <div className="space-y-6">
+          {/* Empty State CTA */}
+          {hasNoData && user?.role === 'admin' && (
+            <div className="glass-panel rounded-2xl p-8 border-2 border-dashed border-[#E1467C]/30 text-center">
+              <Sparkles className="w-16 h-16 mx-auto mb-4 text-[#E1467C]" />
+              <h3 className="text-xl font-bold text-white mb-2">No Data Yet</h3>
+              <p className="text-[#CED4DA] mb-6">
+                Import your operational data to unlock live intelligence and AI dashboards
+              </p>
+              <Button
+                onClick={() => navigate(createPageUrl("DataImport"))}
+                className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Import Data → Unlock Live Intelligence
+              </Button>
+            </div>
+          )}
+
           {/* Hero Map - Lazy Loaded */}
           <Suspense fallback={<div className="glass-panel rounded-2xl h-64 border border-[rgba(255,255,255,0.08)] animate-pulse" />}>
             <HeroMap />
