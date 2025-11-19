@@ -13,6 +13,8 @@ export function requirePermission(user, functionName) {
     aiDirectorDashboard: ['admin'],
     aiDataImport: ['admin'],
     executeDataImport: ['admin'],
+    generateSampleData: ['admin'],
+    scheduleDirectorRefresh: ['admin'],
     aiFinancialForecaster: ['admin', 'finance'],
     aiEngineerScheduler: ['admin', 'helpdesk'],
     revenueSimulator: ['admin', 'finance'],

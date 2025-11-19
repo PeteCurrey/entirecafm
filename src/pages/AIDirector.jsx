@@ -181,7 +181,9 @@ export default function AIDirectorPage() {
       if (result?.data) {
         // Backend returns {success: true, ...dashboardData}
         if (result.data.success) {
-          setDashboardData(result.data);
+          // Remove the success flag before setting as dashboard data
+          const { success, ...dashboardMetrics } = result.data;
+          setDashboardData(dashboardMetrics);
           setLastUpdated(new Date());
           console.log('✅ Dashboard loaded successfully');
           setError(null);
@@ -233,12 +235,15 @@ export default function AIDirectorPage() {
       ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          
-          if (message.type === 'director_dashboard_update') {
-            setDashboardData(message.data);
+
+          if (message.type === 'director_dashboard_update' && message.data) {
+            // Remove success flag if present
+            const { success, ...dashboardMetrics } = message.data;
+            setDashboardData(dashboardMetrics);
             setLastUpdated(new Date());
+            console.log('📡 Real-time dashboard update received');
           }
-          
+
           if (message.type === 'revenue_forecast_available') {
             queryClient.invalidateQueries(['revenue-projection']);
           }
@@ -318,19 +323,41 @@ export default function AIDirectorPage() {
         <div className="glass-panel rounded-2xl p-12 border border-red-500/30 text-center">
           <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-red-400" />
           <h2 className="text-2xl font-bold text-white mb-2">Error Loading Dashboard</h2>
-          <p className="text-red-400 mb-6">{error}</p>
+          <p className="text-red-400 mb-6 whitespace-pre-wrap">{error}</p>
           <div className="space-y-2 text-sm text-[#CED4DA] mb-6">
             <p>• Ensure you have admin role</p>
             <p>• Check backend function is deployed</p>
             <p>• Verify org_id: {user?.org_id || 'not set'}</p>
           </div>
-          <Button
-            onClick={loadDashboard}
-            className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Retry
-          </Button>
+          <div className="flex gap-3 justify-center">
+            <Button
+              onClick={loadDashboard}
+              className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
+            {user?.role === 'admin' && (
+              <Button
+                onClick={async () => {
+                  try {
+                    const result = await base44.functions.invoke('generateSampleData', {});
+                    if (result.data?.success) {
+                      setError(null);
+                      loadDashboard();
+                    }
+                  } catch (err) {
+                    setError('Failed to generate sample data: ' + err.message);
+                  }
+                }}
+                variant="outline"
+                className="border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Generate Sample Data
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     );

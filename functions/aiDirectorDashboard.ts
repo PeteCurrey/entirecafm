@@ -111,14 +111,14 @@ Deno.serve(async (req) => {
     const next48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
     const next7d = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    // Fetch all data in parallel
+    // Fetch all data in parallel - handle empty data gracefully
     const [jobs, engineers, quotes, invoices, clients, sites] = await Promise.all([
-      base44.asServiceRole.entities.Job.filter({ org_id }),
-      base44.asServiceRole.entities.User.list(),
-      base44.asServiceRole.entities.Quote.filter({ org_id }),
-      base44.asServiceRole.entities.Invoice.filter({ org_id }),
-      base44.asServiceRole.entities.Client.filter({ org_id }),
-      base44.asServiceRole.entities.Site.filter({ org_id })
+      base44.asServiceRole.entities.Job.filter({ org_id }).catch(() => []),
+      base44.asServiceRole.entities.User.list().catch(() => []),
+      base44.asServiceRole.entities.Quote.filter({ org_id }).catch(() => []),
+      base44.asServiceRole.entities.Invoice.filter({ org_id }).catch(() => []),
+      base44.asServiceRole.entities.Client.filter({ org_id }).catch(() => []),
+      base44.asServiceRole.entities.Site.filter({ org_id }).catch(() => [])
     ]);
 
     console.log(`✅ Fetched: ${jobs.length} jobs, ${engineers.length} engineers, ${quotes.length} quotes, ${invoices.length} invoices`);
