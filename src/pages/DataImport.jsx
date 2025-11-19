@@ -54,6 +54,13 @@ const ENTITY_TEMPLATES = {
     sample: [
       ["Tom Engineer", "tom@example.com", "07700 900000", "engineer"]
     ]
+  },
+  parts: {
+    name: "Parts Template",
+    headers: ["name", "part_number", "supplier", "unit_cost", "stock_quantity", "category"],
+    sample: [
+      ["HVAC Filter", "FILT-500", "ABC Supplies", "12.50", "50", "consumable"]
+    ]
   }
 };
 
@@ -75,6 +82,44 @@ export default function DataImportPage() {
   useEffect(() => {
     loadUser();
   }, []);
+
+  useEffect(() => {
+    if (!user?.org_id || !isImporting) return;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    let ws;
+
+    try {
+      ws = new WebSocket(wsUrl);
+      
+      ws.onopen = () => {
+        ws.send(JSON.stringify({
+          type: 'subscribe',
+          channel: `import.org.${user.org_id}`
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          if (message.type === 'import_progress') {
+            setImportProgress(message.progress);
+          }
+        } catch (error) {
+          console.error('WebSocket message error:', error);
+        }
+      };
+
+      ws.onerror = (error) => console.error('WebSocket error:', error);
+    } catch (error) {
+      console.error('WebSocket setup error:', error);
+    }
+
+    return () => {
+      if (ws) ws.close();
+    };
+  }, [user?.org_id, isImporting]);
 
   const loadUser = async () => {
     try {
@@ -296,7 +341,16 @@ export default function DataImportPage() {
             {importSummary.errors?.length > 0 && (
               <div className="glass-panel rounded-xl p-4 border border-yellow-500/30 mb-6">
                 <AlertCircle className="w-5 h-5 text-yellow-400 mx-auto mb-2" />
-                <p className="text-sm text-yellow-400">{importSummary.errors.length} rows had issues</p>
+                <p className="text-sm text-yellow-400 mb-3">{importSummary.errors.length} rows had issues</p>
+                {importSummary.error_csv_url && (
+                  <a 
+                    href={importSummary.error_csv_url} 
+                    download="import_errors.csv"
+                    className="text-xs text-white hover:text-[#E1467C] underline"
+                  >
+                    Download Error Report (CSV)
+                  </a>
+                )}
               </div>
             )}
 

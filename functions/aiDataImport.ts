@@ -48,6 +48,18 @@ const ENTITY_SCHEMAS = {
       phone: ['telephone', 'mobile'],
       role: ['position', 'job_title']
     }
+  },
+  Part: {
+    fields: ['name', 'part_number', 'supplier', 'unit_cost', 'stock_quantity', 'category'],
+    required: ['name'],
+    fuzzyMatches: {
+      name: ['part_name', 'description', 'item'],
+      part_number: ['sku', 'code', 'part_code'],
+      supplier: ['vendor', 'manufacturer'],
+      unit_cost: ['price', 'cost', 'unit_price'],
+      stock_quantity: ['quantity', 'stock', 'qty'],
+      category: ['type', 'part_type']
+    }
   }
 };
 

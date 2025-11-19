@@ -1,5 +1,28 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
+const REDIS_URL = Deno.env.get("UPSTASH_REDIS_REST_URL");
+const REDIS_TOKEN = Deno.env.get("UPSTASH_REDIS_REST_TOKEN");
+
+async function publishProgress(channel, data) {
+  if (!REDIS_URL || !REDIS_TOKEN) {
+    console.warn('Redis not configured, skipping progress update');
+    return;
+  }
+  
+  try {
+    await fetch(`${REDIS_URL}/publish/${channel}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${REDIS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+  } catch (error) {
+    console.error('Redis publish error:', error);
+  }
+}
+
 async function parseCSVFromUrl(fileUrl) {
   const response = await fetch(fileUrl);
   const text = await response.text();
@@ -148,6 +171,18 @@ Deno.serve(async (req) => {
       try {
         const row = dataRows[i];
         let data = transformRow(row, headers, fieldMapping, org_id);
+        
+        // Publish progress
+        if (i % 10 === 0 || i === dataRows.length - 1) {
+          const progress = Math.round(((i + 1) / dataRows.length) * 100);
+          await publishProgress(`import.org.${org_id}`, {
+            type: 'import_progress',
+            progress,
+            current: i + 1,
+            total: dataRows.length,
+            entity: entityType
+          });
+        }
 
         // Handle relationships
         if (entityType === 'Job') {
@@ -256,11 +291,31 @@ Deno.serve(async (req) => {
       }
     });
 
+    // Generate error CSV if needed
+    let errorCsvUrl = null;
+    if (errors.length > 0) {
+      const errorCsv = [
+        'Row,Error',
+        ...errors.map(e => `${e.row},"${e.error.replace(/"/g, '""')}"`)
+      ].join('\n');
+      
+      const errorBlob = new Blob([errorCsv], { type: 'text/csv' });
+      const errorFile = new File([errorBlob], 'import_errors.csv');
+      
+      try {
+        const uploadResult = await base44.integrations.Core.UploadFile({ file: errorFile });
+        errorCsvUrl = uploadResult.file_url;
+      } catch (uploadError) {
+        console.warn('Failed to upload error CSV:', uploadError);
+      }
+    }
+
     return Response.json({
       success: true,
       summary: {
         imported,
         errors,
+        error_csv_url: errorCsvUrl,
         total_rows: dataRows.length
       }
     });
