@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -33,7 +32,8 @@ import {
   Megaphone,
   Navigation,
   MessageCircle,
-  Shield
+  Shield,
+  Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -42,6 +42,7 @@ const navigationSections = [
     title: "OPERATIONS",
     items: [
       { title: "Operations Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard, page: "Dashboard" },
+      { title: "Data Import Hub", url: createPageUrl("DataImport"), icon: Upload, page: "DataImport" },
       { title: "Map & Tracking", url: createPageUrl("MapTracking"), icon: Map, page: "MapTracking" },
       { title: "AI Helpdesk", url: createPageUrl("AIHelpdesk"), icon: Bot, page: "AIHelpdesk" },
       { title: "Jobs", url: createPageUrl("Jobs"), icon: Wrench, page: "Jobs" },

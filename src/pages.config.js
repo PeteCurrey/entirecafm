@@ -33,6 +33,7 @@ import SystemDocumentation from './pages/SystemDocumentation';
 import AILeads from './pages/AILeads';
 import AssetsPredict from './pages/AssetsPredict';
 import Compliance from './pages/Compliance';
+import DataImport from './pages/DataImport';
 import __Layout from './Layout.jsx';
 
 
@@ -72,6 +73,7 @@ export const PAGES = {
     "AILeads": AILeads,
     "AssetsPredict": AssetsPredict,
     "Compliance": Compliance,
+    "DataImport": DataImport,
 }
 
 export const pagesConfig = {

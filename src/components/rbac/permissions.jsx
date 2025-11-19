@@ -86,6 +86,7 @@ export const FUNCTION_PERMISSIONS = {
 // Page-level permissions: { pageName: [allowedRoles] }
 export const PAGE_PERMISSIONS = {
   Dashboard: [ROLES.ADMIN, ROLES.ENGINEER, ROLES.HELPDESK, ROLES.FINANCE],
+  DataImport: [ROLES.ADMIN],
   AIDirector: [ROLES.ADMIN],
   AIAccounts: [ROLES.ADMIN, ROLES.FINANCE],
   AIMarketing: [ROLES.ADMIN],
