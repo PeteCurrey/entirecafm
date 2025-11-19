@@ -98,12 +98,12 @@ Deno.serve(async (req) => {
 
     // Fetch all data in parallel
     const [jobs, engineers, quotes, invoices, clients, sites] = await Promise.all([
-      base44.entities.Job.filter({ org_id }),
-      base44.entities.User.list(),
-      base44.entities.Quote.filter({ org_id }),
-      base44.entities.Invoice.filter({ org_id }),
-      base44.entities.Client.filter({ org_id }),
-      base44.entities.Site.filter({ org_id })
+      base44.asServiceRole.entities.Job.filter({ org_id }),
+      base44.asServiceRole.entities.User.list(),
+      base44.asServiceRole.entities.Quote.filter({ org_id }),
+      base44.asServiceRole.entities.Invoice.filter({ org_id }),
+      base44.asServiceRole.entities.Client.filter({ org_id }),
+      base44.asServiceRole.entities.Site.filter({ org_id })
     ]);
 
     console.log(`✅ Fetched: ${jobs.length} jobs, ${engineers.length} engineers, ${quotes.length} quotes, ${invoices.length} invoices`);
