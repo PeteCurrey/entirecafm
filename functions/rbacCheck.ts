@@ -11,6 +11,8 @@ export function requirePermission(user, functionName) {
   // Map of function permissions - keep in sync with frontend
   const FUNCTION_PERMISSIONS = {
     aiDirectorDashboard: ['admin'],
+    aiDataImport: ['admin'],
+    executeDataImport: ['admin'],
     aiFinancialForecaster: ['admin', 'finance'],
     aiEngineerScheduler: ['admin', 'helpdesk'],
     revenueSimulator: ['admin', 'finance'],
