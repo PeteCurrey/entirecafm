@@ -13,16 +13,16 @@ import {
   Database,
   RefreshCw,
   X,
-  Link as LinkIcon
-} from "lucide-react";
+  Link as LinkIcon } from
+"lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from
+"@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 
@@ -31,36 +31,36 @@ const ENTITY_TEMPLATES = {
     name: "Jobs Template",
     headers: ["title", "description", "job_type", "priority", "status", "site_name", "asset_name", "scheduled_date", "po_number"],
     sample: [
-      ["Fix HVAC Unit", "Air conditioning not working in Building A", "reactive", "high", "new", "Main Office", "HVAC-01", "2025-12-01", "PO-12345"]
-    ]
+    ["Fix HVAC Unit", "Air conditioning not working in Building A", "reactive", "high", "new", "Main Office", "HVAC-01", "2025-12-01", "PO-12345"]]
+
   },
   assets: {
     name: "Assets Template",
     headers: ["name", "site_name", "asset_type", "manufacturer", "model", "serial_number", "installation_date"],
     sample: [
-      ["HVAC-01", "Main Office", "hvac", "Carrier", "X5000", "SN-98765", "2020-01-15"]
-    ]
+    ["HVAC-01", "Main Office", "hvac", "Carrier", "X5000", "SN-98765", "2020-01-15"]]
+
   },
   sites: {
     name: "Sites Template",
     headers: ["name", "address", "city", "postcode", "contact_name", "contact_phone", "contact_email"],
     sample: [
-      ["Main Office", "123 Business Park", "London", "SW1A 1AA", "John Smith", "020 1234 5678", "john@example.com"]
-    ]
+    ["Main Office", "123 Business Park", "London", "SW1A 1AA", "John Smith", "020 1234 5678", "john@example.com"]]
+
   },
   engineers: {
     name: "Engineers Template",
     headers: ["full_name", "email", "phone", "role"],
     sample: [
-      ["Tom Engineer", "tom@example.com", "07700 900000", "engineer"]
-    ]
+    ["Tom Engineer", "tom@example.com", "07700 900000", "engineer"]]
+
   },
   parts: {
     name: "Parts Template",
     headers: ["name", "part_number", "supplier", "unit_cost", "stock_quantity", "category"],
     sample: [
-      ["HVAC Filter", "FILT-500", "ABC Supplies", "12.50", "50", "consumable"]
-    ]
+    ["HVAC Filter", "FILT-500", "ABC Supplies", "12.50", "50", "consumable"]]
+
   }
 };
 
@@ -92,7 +92,7 @@ export default function DataImportPage() {
 
     try {
       ws = new WebSocket(wsUrl);
-      
+
       ws.onopen = () => {
         ws.send(JSON.stringify({
           type: 'subscribe',
@@ -144,7 +144,7 @@ export default function DataImportPage() {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0]);
     }
@@ -158,11 +158,11 @@ export default function DataImportPage() {
 
   const handleFile = async (selectedFile) => {
     const validTypes = [
-      'text/csv',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    ];
-    
+    'text/csv',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+
+
     if (!validTypes.includes(selectedFile.type) && !selectedFile.name.match(/\.(csv|xls|xlsx)$/i)) {
       setError("Please upload a valid CSV, XLS, or XLSX file");
       return;
@@ -206,7 +206,7 @@ export default function DataImportPage() {
 
   const handleSheetsImport = async () => {
     if (!sheetsUrl) return;
-    
+
     setIsAnalyzing(true);
     setError(null);
 
@@ -244,7 +244,7 @@ export default function DataImportPage() {
       if (result.data.success) {
         setImportSummary(result.data.summary);
         setImportComplete(true);
-        
+
         // Trigger post-import automations
         await base44.functions.invoke('aiDirectorDashboard', { org_id: user.org_id });
       } else {
@@ -261,9 +261,9 @@ export default function DataImportPage() {
   const downloadTemplate = (templateKey) => {
     const template = ENTITY_TEMPLATES[templateKey];
     const csv = [
-      template.headers.join(','),
-      ...template.sample.map(row => row.join(','))
-    ].join('\n');
+    template.headers.join(','),
+    ...template.sample.map((row) => row.join(','))].
+    join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -292,8 +292,8 @@ export default function DataImportPage() {
           <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-[#E1467C]" />
           <p className="text-[#CED4DA]">Loading...</p>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -310,64 +310,64 @@ export default function DataImportPage() {
         <Button
           onClick={() => setShowTemplates(true)}
           variant="outline"
-          className="border-[rgba(255,255,255,0.08)] text-[#CED4DA] hover:bg-[rgba(255,255,255,0.04)]"
-        >
+          className="border-[rgba(255,255,255,0.08)] text-[#CED4DA] hover:bg-[rgba(255,255,255,0.04)]">
+
           <Download className="w-4 h-4 mr-2" />
           Templates
         </Button>
       </div>
 
       <AnimatePresence mode="wait">
-        {importComplete && importSummary ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="glass-panel rounded-2xl p-8 border border-green-500/30 text-center"
-          >
+        {importComplete && importSummary ?
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="glass-panel rounded-2xl p-8 border border-green-500/30 text-center">
+
             <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-green-400" />
             <h2 className="text-2xl font-bold text-white mb-2">Import Complete!</h2>
             <p className="text-[#CED4DA] mb-6">Your data has been successfully imported</p>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              {Object.entries(importSummary.imported).map(([entity, count]) => (
-                <div key={entity} className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
+              {Object.entries(importSummary.imported).map(([entity, count]) =>
+            <div key={entity} className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
                   <div className="text-3xl font-bold text-[#E1467C] mb-1">{count}</div>
                   <div className="text-xs text-[#CED4DA]">{entity}</div>
                 </div>
-              ))}
+            )}
             </div>
 
-            {importSummary.errors?.length > 0 && (
-              <div className="glass-panel rounded-xl p-4 border border-yellow-500/30 mb-6">
+            {importSummary.errors?.length > 0 &&
+          <div className="glass-panel rounded-xl p-4 border border-yellow-500/30 mb-6">
                 <AlertCircle className="w-5 h-5 text-yellow-400 mx-auto mb-2" />
                 <p className="text-sm text-yellow-400 mb-3">{importSummary.errors.length} rows had issues</p>
-                {importSummary.error_csv_url && (
-                  <a 
-                    href={importSummary.error_csv_url} 
-                    download="import_errors.csv"
-                    className="text-xs text-white hover:text-[#E1467C] underline"
-                  >
+                {importSummary.error_csv_url &&
+            <a
+              href={importSummary.error_csv_url}
+              download="import_errors.csv"
+              className="text-xs text-white hover:text-[#E1467C] underline">
+
                     Download Error Report (CSV)
                   </a>
-                )}
+            }
               </div>
-            )}
+          }
 
             <Button
-              onClick={resetImport}
-              className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
-            >
+            onClick={resetImport}
+            className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white">
+
               Import More Data
             </Button>
-          </motion.div>
-        ) : mappingResult ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-6"
-          >
+          </motion.div> :
+        mappingResult ?
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="space-y-6">
+
             {/* Mapping Preview */}
             <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
               <div className="flex items-center justify-between mb-4">
@@ -384,127 +384,127 @@ export default function DataImportPage() {
               </div>
 
               <div className="space-y-4">
-                {Object.entries(mappingResult.mapping).map(([entity, fields]) => (
-                  <div key={entity} className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
+                {Object.entries(mappingResult.mapping).map(([entity, fields]) =>
+              <div key={entity} className="glass-panel rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
                     <h4 className="font-semibold text-white mb-3 capitalize">{entity}</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {Object.entries(fields).map(([targetField, sourceField]) => (
-                        <div key={targetField} className="text-xs">
+                      {Object.entries(fields).map(([targetField, sourceField]) =>
+                  <div key={targetField} className="text-xs">
                           <div className="text-[#CED4DA] mb-1">{targetField}</div>
                           <Badge variant="outline" className="text-white">
                             {sourceField}
                           </Badge>
                         </div>
-                      ))}
+                  )}
                     </div>
                   </div>
-                ))}
+              )}
               </div>
 
               {/* Preview Table */}
-              {mappingResult.preview_data && (
-                <div className="mt-6">
+              {mappingResult.preview_data &&
+            <div className="mt-6">
                   <h4 className="text-sm font-semibold text-white mb-3">Data Preview (first 5 rows)</h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="border-b border-[rgba(255,255,255,0.08)]">
-                          {mappingResult.preview_data[0]?.map((header, idx) => (
-                            <th key={idx} className="text-left py-2 px-3 text-[#CED4DA]">{header}</th>
-                          ))}
+                          {mappingResult.preview_data[0]?.map((header, idx) =>
+                      <th key={idx} className="text-left py-2 px-3 text-[#CED4DA]">{header}</th>
+                      )}
                         </tr>
                       </thead>
                       <tbody>
-                        {mappingResult.preview_data.slice(1, 6).map((row, idx) => (
-                          <tr key={idx} className="border-b border-[rgba(255,255,255,0.04)]">
-                            {row.map((cell, cellIdx) => (
-                              <td key={cellIdx} className="py-2 px-3 text-white">{cell}</td>
-                            ))}
+                        {mappingResult.preview_data.slice(1, 6).map((row, idx) =>
+                    <tr key={idx} className="border-b border-[rgba(255,255,255,0.04)]">
+                            {row.map((cell, cellIdx) =>
+                      <td key={cellIdx} className="py-2 px-3 text-white">{cell}</td>
+                      )}
                           </tr>
-                        ))}
+                    )}
                       </tbody>
                     </table>
                   </div>
                 </div>
-              )}
+            }
             </div>
 
             {/* Action Buttons */}
             <div className="flex items-center justify-end gap-3">
               <Button
-                onClick={resetImport}
-                variant="outline"
-                className="border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
-              >
+              onClick={resetImport}
+              variant="outline"
+              className="border-[rgba(255,255,255,0.08)] text-[#CED4DA]">
+
                 <X className="w-4 h-4 mr-2" />
                 Cancel
               </Button>
               <Button
-                onClick={executeImport}
-                disabled={isImporting}
-                className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
-              >
-                {isImporting ? (
-                  <>
+              onClick={executeImport}
+              disabled={isImporting}
+              className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white">
+
+                {isImporting ?
+              <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Importing...
-                  </>
-                ) : (
-                  <>
+                  </> :
+
+              <>
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     Confirm Import
                   </>
-                )}
+              }
               </Button>
             </div>
 
-            {isImporting && (
-              <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
+            {isImporting &&
+          <div className="glass-panel rounded-2xl p-6 border border-[rgba(255,255,255,0.08)]">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm text-[#CED4DA]">Importing data...</span>
                   <span className="text-sm font-semibold text-white">{importProgress}%</span>
                 </div>
                 <Progress value={importProgress} className="h-2" />
               </div>
-            )}
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-6"
-          >
+          }
+          </motion.div> :
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="space-y-6">
+
             {/* File Upload */}
             <div
-              className={`glass-panel rounded-2xl p-12 border-2 border-dashed transition-all cursor-pointer ${
-                dragActive
-                  ? 'border-[#E1467C] bg-[rgba(225,70,124,0.05)]'
-                  : 'border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.15)]'
-              }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
+            className={`glass-panel rounded-2xl p-12 border-2 border-dashed transition-all cursor-pointer ${
+            dragActive ?
+            'border-[#E1467C] bg-[rgba(225,70,124,0.05)]' :
+            'border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.15)]'}`
+            }
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}>
+
               <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,.xls,.xlsx"
-                onChange={handleFileInput}
-                className="hidden"
-              />
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.xls,.xlsx"
+              onChange={handleFileInput}
+              className="hidden" />
+
               
               <div className="text-center">
-                {isAnalyzing ? (
-                  <>
+                {isAnalyzing ?
+              <>
                     <Loader2 className="w-16 h-16 mx-auto mb-4 text-[#E1467C] animate-spin" />
                     <h3 className="text-xl font-bold text-white mb-2">Analyzing File...</h3>
                     <p className="text-[#CED4DA]">AI is mapping your data schema</p>
-                  </>
-                ) : (
-                  <>
+                  </> :
+
+              <>
                     <Upload className="w-16 h-16 mx-auto mb-4 text-[#E1467C]" />
                     <h3 className="text-xl font-bold text-white mb-2">Drop your file here</h3>
                     <p className="text-[#CED4DA] mb-4">or click to browse</p>
@@ -512,7 +512,7 @@ export default function DataImportPage() {
                       Supports CSV, XLS, XLSX
                     </Badge>
                   </>
-                )}
+              }
               </div>
             </div>
 
@@ -524,16 +524,16 @@ export default function DataImportPage() {
               </h3>
               <div className="flex gap-3">
                 <Input
-                  placeholder="Paste Google Sheets URL..."
-                  value={sheetsUrl}
-                  onChange={(e) => setSheetsUrl(e.target.value)}
-                  className="flex-1 bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.08)] text-white"
-                />
+                placeholder="Paste Google Sheets URL..."
+                value={sheetsUrl}
+                onChange={(e) => setSheetsUrl(e.target.value)}
+                className="flex-1 bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.08)] text-white" />
+
                 <Button
-                  onClick={handleSheetsImport}
-                  disabled={!sheetsUrl || isAnalyzing}
-                  className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
-                >
+                onClick={handleSheetsImport}
+                disabled={!sheetsUrl || isAnalyzing}
+                className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white">
+
                   <ArrowRight className="w-4 h-4 mr-2" />
                   Import
                 </Button>
@@ -541,27 +541,27 @@ export default function DataImportPage() {
             </div>
 
             {/* Error Display */}
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-panel rounded-2xl p-4 border border-red-500/30 flex items-start gap-3"
-              >
+            {error &&
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-panel rounded-2xl p-4 border border-red-500/30 flex items-start gap-3">
+
                 <AlertCircle className="w-5 h-5 text-red-400 mt-0.5" />
                 <div className="flex-1">
                   <h4 className="font-semibold text-red-400 mb-1">Import Error</h4>
                   <p className="text-sm text-[#CED4DA]">{error}</p>
                 </div>
                 <Button
-                  onClick={() => setError(null)}
-                  variant="ghost"
-                  size="icon"
-                  className="text-[#CED4DA]"
-                >
+              onClick={() => setError(null)}
+              variant="ghost"
+              size="icon"
+              className="text-[#CED4DA]">
+
                   <X className="w-4 h-4" />
                 </Button>
               </motion.div>
-            )}
+          }
 
             {/* Benefits */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -582,7 +582,7 @@ export default function DataImportPage() {
               </div>
             </div>
           </motion.div>
-        )}
+        }
       </AnimatePresence>
 
       {/* Templates Dialog */}
@@ -599,21 +599,21 @@ export default function DataImportPage() {
               Download sample CSV templates to get started. Headers are optional — AI will detect column roles.
             </p>
             <div className="grid grid-cols-2 gap-4">
-              {Object.entries(ENTITY_TEMPLATES).map(([key, template]) => (
-                <Button
-                  key={key}
-                  onClick={() => downloadTemplate(key)}
-                  variant="outline"
-                  className="border-[rgba(255,255,255,0.08)] text-white hover:bg-[rgba(255,255,255,0.04)] justify-start"
-                >
+              {Object.entries(ENTITY_TEMPLATES).map(([key, template]) =>
+              <Button
+                key={key}
+                onClick={() => downloadTemplate(key)}
+                variant="outline" className="bg-background text-slate-600 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.04)] justify-start">
+
+
                   <Download className="w-4 h-4 mr-2" />
                   {template.name}
                 </Button>
-              ))}
+              )}
             </div>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>);
+
 }
