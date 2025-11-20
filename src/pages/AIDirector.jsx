@@ -164,48 +164,76 @@ export default function AIDirectorPage() {
 
   const loadDashboard = async () => {
     if (!user?.org_id) {
-      setError('No organization ID found');
+      console.error('❌ No org_id found on user:', user);
+      setError('No organization ID found. User may not be assigned to an organization.');
+      setIsLoadingDashboard(false);
       return;
     }
 
     setIsLoadingDashboard(true);
     setError(null);
+    
     try {
       console.log('🚀 Loading director dashboard for org:', user.org_id);
+      console.log('🔑 User info:', { email: user.email, role: user.role, org_id: user.org_id });
+      
       const result = await base44.functions.invoke('aiDirectorDashboard', {
         org_id: user.org_id
       });
 
-      console.log('📊 Dashboard response:', result);
+      console.log('📊 Raw dashboard response:', JSON.stringify(result, null, 2));
 
-      if (result?.data) {
-        // Backend returns {success: true, ...dashboardData}
-        if (result.data.success) {
-          // Remove the success flag before setting as dashboard data
-          const { success, ...dashboardMetrics } = result.data;
-          setDashboardData(dashboardMetrics);
-          setLastUpdated(new Date());
-          console.log('✅ Dashboard loaded successfully');
-          setError(null);
-        } else if (result.data.error) {
-          console.error('❌ Dashboard error:', result.data.error);
-          setError(`Backend error: ${result.data.error}${result.data.stack ? '\n' + result.data.stack : ''}`);
-        } else {
-          console.error('❌ Unexpected response:', result.data);
-          setError('Unexpected response format');
-        }
-      } else {
-        console.error('❌ No data in response');
-        setError('No data received from server');
+      if (!result) {
+        console.error('❌ Result is null/undefined');
+        setError('No response from server');
+        setIsLoadingDashboard(false);
+        return;
       }
 
+      if (!result.data) {
+        console.error('❌ Result.data is null/undefined');
+        setError('No data in server response');
+        setIsLoadingDashboard(false);
+        return;
+      }
+
+      // Check for explicit error in response
+      if (result.data.error) {
+        console.error('❌ Backend returned error:', result.data.error);
+        setError(`Backend error: ${result.data.error}${result.data.stack ? '\n\n' + result.data.stack : ''}`);
+        setIsLoadingDashboard(false);
+        return;
+      }
+
+      // Backend returns {success: true, ...dashboardData}
+      if (result.data.success) {
+        // Remove the success flag before setting as dashboard data
+        const { success, ...dashboardMetrics } = result.data;
+        console.log('✅ Dashboard metrics extracted:', Object.keys(dashboardMetrics));
+        console.log('📊 Org health score:', dashboardMetrics.org_health_score);
+        console.log('📊 Summary:', dashboardMetrics.summary);
+        
+        setDashboardData(dashboardMetrics);
+        setLastUpdated(new Date());
+        console.log('✅ Dashboard state updated successfully');
+        setError(null);
+      } else {
+        console.error('❌ Success flag is false or missing');
+        setError('Invalid response format: success flag missing');
+      }
+
+      // Invalidate related queries
       queryClient.invalidateQueries(['revenue-projection']);
       queryClient.invalidateQueries(['benchmarks']);
+      
     } catch (error) {
       console.error("❌ Error loading dashboard:", error);
+      console.error("❌ Error stack:", error.stack);
+      console.error("❌ Error response:", error.response);
+      
       const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to load dashboard';
-      const errorDetails = error.response?.data?.stack || '';
-      setError(`${errorMsg}${errorDetails ? '\n\nDetails: ' + errorDetails : ''}`);
+      const errorDetails = error.response?.data?.stack || error.stack || '';
+      setError(`${errorMsg}${errorDetails ? '\n\nDetails:\n' + errorDetails : ''}`);
     } finally {
       setIsLoadingDashboard(false);
     }
