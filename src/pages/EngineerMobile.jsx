@@ -68,6 +68,7 @@ export default function EngineerMobile() {
   const [isRecording, setIsRecording] = useState(false);
   const [offlineJobs, setOfflineJobs] = useState([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [isLocationTracking, setIsLocationTracking] = useState(false);
   const queryClient = useQueryClient();
 
   // Initialize PWA features
@@ -183,6 +184,13 @@ export default function EngineerMobile() {
   const updateJobStatus = async (jobId, status) => {
     const updates = { status };
     
+    // Enable location tracking when en_route or on_site
+    if (status === 'en_route' || status === 'on_site') {
+      setIsLocationTracking(true);
+    } else if (status === 'completed') {
+      setIsLocationTracking(false);
+    }
+    
     // Update engineer location
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(async (position) => {
@@ -192,7 +200,8 @@ export default function EngineerMobile() {
               lat: position.coords.latitude,
               lng: position.coords.longitude,
               accuracy: position.coords.accuracy,
-              battery_level: 100
+              battery_level: 100,
+              status: status
             });
           } catch (e) {
             console.error('Location update failed:', e);
@@ -204,6 +213,22 @@ export default function EngineerMobile() {
     updateJobMutation.mutate({ jobId, updates });
     toast.success(`Job status updated to ${status.replace('_', ' ')}`);
   };
+
+  // Handle real-time location updates from map
+  const handleLocationUpdate = useCallback(async (location, accuracy) => {
+    if (!navigator.onLine || !user) return;
+    
+    try {
+      await base44.functions.invoke('updateEngineerLocation', {
+        lat: location.lat,
+        lng: location.lng,
+        accuracy: accuracy,
+        battery_level: 100
+      });
+    } catch (e) {
+      console.error('Location update failed:', e);
+    }
+  }, [user]);
 
   const handlePhotoCapture = async (e) => {
     const files = Array.from(e.target.files);
@@ -301,6 +326,12 @@ export default function EngineerMobile() {
 
   const activeJobs = jobs.filter(j => !['completed', 'cancelled'].includes(j.status));
   const completedJobs = jobs.filter(j => j.status === 'completed');
+  
+  // Auto-enable tracking if any job is en_route or on_site
+  useEffect(() => {
+    const hasActiveTracking = activeJobs.some(j => j.status === 'en_route' || j.status === 'on_site');
+    setIsLocationTracking(hasActiveTracking);
+  }, [activeJobs]);
 
   const statusColors = {
     new: 'bg-blue-500/20 text-blue-300 border-blue-400/30',
@@ -545,6 +576,9 @@ export default function EngineerMobile() {
               jobs={activeJobs} 
               currentJob={activeJobs.find(j => j.status === 'en_route' || j.status === 'on_site')}
               onNavigate={(job) => toast.info(`Navigating to ${job.title}`)}
+              user={user}
+              isTracking={isLocationTracking}
+              onLocationUpdate={handleLocationUpdate}
             />
           </Suspense>
         </TabsContent>
