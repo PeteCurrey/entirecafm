@@ -35,6 +35,7 @@ import AssetsPredict from './pages/AssetsPredict';
 import Compliance from './pages/Compliance';
 import DataImport from './pages/DataImport';
 import EngineerMobile from './pages/EngineerMobile';
+import BulkDataWizard from './pages/BulkDataWizard';
 import __Layout from './Layout.jsx';
 
 
@@ -76,6 +77,7 @@ export const PAGES = {
     "Compliance": Compliance,
     "DataImport": DataImport,
     "EngineerMobile": EngineerMobile,
+    "BulkDataWizard": BulkDataWizard,
 }
 
 export const pagesConfig = {
