@@ -34,6 +34,7 @@ import AILeads from './pages/AILeads';
 import AssetsPredict from './pages/AssetsPredict';
 import Compliance from './pages/Compliance';
 import DataImport from './pages/DataImport';
+import EngineerMobile from './pages/EngineerMobile';
 import __Layout from './Layout.jsx';
 
 
@@ -74,6 +75,7 @@ export const PAGES = {
     "AssetsPredict": AssetsPredict,
     "Compliance": Compliance,
     "DataImport": DataImport,
+    "EngineerMobile": EngineerMobile,
 }
 
 export const pagesConfig = {

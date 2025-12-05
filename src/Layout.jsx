@@ -78,6 +78,7 @@ const navigationSections = [
     items: [
       { title: "Engineer Simulator", url: createPageUrl("EngineerSimulator"), icon: Navigation, page: "EngineerSimulator" },
       { title: "Test Redis Real-Time", url: createPageUrl("TestRedis"), icon: Bot, page: "TestRedis" },
+      { title: "Mobile Field App", url: createPageUrl("EngineerMobile"), icon: Navigation, page: "EngineerMobile" },
     ]
   }
 ];
