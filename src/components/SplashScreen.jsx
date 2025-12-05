@@ -53,9 +53,10 @@ export default function SplashScreen({ oncePerSession = true, minMs = 3000 }) {
           initial={{ x: "-100%" }}
           animate={{ x: "0%" }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute top-0 left-0 h-[2px] w-full"
+          className="absolute top-1/2 left-0 h-[2px] w-full"
           style={{ 
-            background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)`
+            background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)`,
+            transform: 'translateY(-50%)'
           }}
         />
 
