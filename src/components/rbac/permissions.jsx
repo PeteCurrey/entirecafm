@@ -85,6 +85,7 @@ export const FUNCTION_PERMISSIONS = {
 
 // Page-level permissions: { pageName: [allowedRoles] }
 export const PAGE_PERMISSIONS = {
+  BulkDataWizard: [ROLES.ADMIN],
   Dashboard: [ROLES.ADMIN, ROLES.ENGINEER, ROLES.HELPDESK, ROLES.FINANCE],
   DataImport: [ROLES.ADMIN],
   AIDirector: [ROLES.ADMIN],

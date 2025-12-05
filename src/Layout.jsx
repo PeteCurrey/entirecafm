@@ -80,6 +80,12 @@ const navigationSections = [
       { title: "Test Redis Real-Time", url: createPageUrl("TestRedis"), icon: Bot, page: "TestRedis" },
       { title: "Mobile Field App", url: createPageUrl("EngineerMobile"), icon: Navigation, page: "EngineerMobile" },
     ]
+  },
+  {
+    title: "ADMIN TOOLS",
+    items: [
+      { title: "Bulk Upload Wizard", url: createPageUrl("BulkDataWizard"), icon: Upload, page: "BulkDataWizard" },
+    ]
   }
 ];
 
