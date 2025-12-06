@@ -11,9 +11,11 @@ import {
   Calendar,
   CheckCircle2,
   Navigation,
-  Phone
+  Phone,
+  MessageCircle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
 export default function ClientJobDetailPage() {
@@ -25,6 +27,7 @@ export default function ClientJobDetailPage() {
     queryFn: () => base44.entities.Job.filter({ id: jobId }),
     select: (data) => data[0],
     enabled: !!jobId,
+    refetchInterval: 10000
   });
 
   const { data: site } = useQuery({
@@ -89,9 +92,17 @@ export default function ClientJobDetailPage() {
                 <p className="text-body">Job #{job.job_number}</p>
               )}
             </div>
-            <Badge className={`${statusColors[job.status]} border text-sm px-4 py-2`}>
-              {job.status.replace('_', ' ')}
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Badge className={`${statusColors[job.status]} border text-sm px-4 py-2`}>
+                {job.status.replace('_', ' ')}
+              </Badge>
+              <Link to={createPageUrl("ClientMessages")}>
+                <Button className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Message
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
