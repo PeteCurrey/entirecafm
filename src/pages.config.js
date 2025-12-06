@@ -36,6 +36,8 @@ import Compliance from './pages/Compliance';
 import DataImport from './pages/DataImport';
 import EngineerMobile from './pages/EngineerMobile';
 import BulkDataWizard from './pages/BulkDataWizard';
+import ClientDocuments from './pages/ClientDocuments';
+import ClientMessages from './pages/ClientMessages';
 import __Layout from './Layout.jsx';
 
 
@@ -78,6 +80,8 @@ export const PAGES = {
     "DataImport": DataImport,
     "EngineerMobile": EngineerMobile,
     "BulkDataWizard": BulkDataWizard,
+    "ClientDocuments": ClientDocuments,
+    "ClientMessages": ClientMessages,
 }
 
 export const pagesConfig = {

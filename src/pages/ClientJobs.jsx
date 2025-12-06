@@ -41,7 +41,8 @@ export default function ClientJobsPage() {
       if (!clientId) return [];
       return base44.entities.Job.filter({ client_id: clientId });
     },
-    enabled: !!clientId
+    enabled: !!clientId,
+    refetchInterval: 10000 // Real-time updates every 10s
   });
 
   const { data: sites = [] } = useQuery({

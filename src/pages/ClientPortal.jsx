@@ -11,7 +11,8 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -193,6 +194,12 @@ export default function ClientPortalPage() {
               <Button className="w-full justify-start" variant="outline">
                 <Database className="w-4 h-4 mr-2" />
                 Documents & Reports
+              </Button>
+            </Link>
+            <Link to={createPageUrl("ClientMessages")}>
+              <Button className="w-full justify-start" variant="outline">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Secure Messages
               </Button>
             </Link>
           </div>
