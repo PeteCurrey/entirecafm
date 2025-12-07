@@ -352,7 +352,10 @@ export default function BulkDataWizard() {
   };
 
   const executeImport = async () => {
-    if (!parsedData || !user?.org_id) return;
+    if (!parsedData || !user?.org_id || !file) {
+      toast.error("Missing required data for import");
+      return;
+    }
 
     setIsImporting(true);
     setImportProgress(0);
@@ -361,41 +364,52 @@ export default function BulkDataWizard() {
       // Upload file first
       const uploadResult = await base44.integrations.Core.UploadFile({ file });
       
+      setImportProgress(30);
+      
       // Call bulk import function
       const result = await base44.functions.invoke('bulkImport', {
         org_id: user.org_id,
         entity_type: selectedEntity,
-        file_url: uploadResult.file_url
+        file_url: uploadResult.file_url,
+        headers: parsedData.headers,
+        row_count: parsedData.rows.length
       });
 
-      if (result.data.success) {
+      setImportProgress(90);
+
+      if (result.data?.success) {
         setImportResult(result.data);
-        toast.success(`Import complete: ${result.data.created} created, ${result.data.updated} updated`);
+        setImportProgress(100);
+        toast.success(`Import complete: ${result.data.created || 0} created, ${result.data.updated || 0} updated`);
         
         // Log to audit
-        await base44.entities.AuditLog.create({
-          org_id: user.org_id,
-          user_id: user.id,
-          action: 'CREATE',
-          entity_type: 'BulkImport',
-          entity_id: `bulk-${selectedEntity}-${Date.now()}`,
-          new_values: {
-            entity_type: selectedEntity,
-            created: result.data.created,
-            updated: result.data.updated,
-            skipped: result.data.skipped,
-            users_created: result.data.users_created || 0
-          }
-        });
+        try {
+          await base44.entities.AuditLog.create({
+            org_id: user.org_id,
+            user_id: user.id,
+            action: 'CREATE',
+            entity_type: 'BulkImport',
+            entity_id: `bulk-${selectedEntity}-${Date.now()}`,
+            new_values: {
+              entity_type: selectedEntity,
+              created: result.data.created || 0,
+              updated: result.data.updated || 0,
+              skipped: result.data.skipped || 0,
+              users_created: result.data.users_created || 0
+            }
+          });
+        } catch (auditError) {
+          console.log("Audit log failed (non-critical):", auditError);
+        }
       } else {
-        toast.error(result.data.error || "Import failed");
+        throw new Error(result.data?.error || "Import failed");
       }
     } catch (error) {
       console.error("Import error:", error);
+      setImportProgress(0);
       toast.error(error.response?.data?.error || error.message || "Import failed");
     } finally {
       setIsImporting(false);
-      setImportProgress(100);
     }
   };
 
