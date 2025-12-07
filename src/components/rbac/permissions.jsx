@@ -104,7 +104,8 @@ export const PAGE_PERMISSIONS = {
   Compliance: [ROLES.ADMIN],
   AIHelpdesk: [ROLES.ADMIN, ROLES.HELPDESK],
   ExecutiveBrief: [ROLES.ADMIN],
-  ClientPortal: [ROLES.CLIENT]
+  ClientPortal: [ROLES.CLIENT],
+  Settings: [ROLES.ADMIN, ROLES.ENGINEER, ROLES.HELPDESK, ROLES.FINANCE, ROLES.CLIENT]
 };
 
 // Helper functions

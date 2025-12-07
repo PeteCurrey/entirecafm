@@ -249,6 +249,23 @@ export default function Layout({ children, currentPageName }) {
               </div>
             ))}
           </nav>
+
+          <div className="p-4 border-t border-[rgba(255,255,255,0.08)]">
+            <Link
+              to={createPageUrl("Settings")}
+              className={`sidebar-nav-item flex items-center gap-3 ${location.pathname === createPageUrl("Settings") ? 'active' : ''}`}
+            >
+              <Settings className="w-4 h-4 text-[#CED4DA]" strokeWidth={1.5} />
+              <span className="text-sm text-[#CED4DA]">Settings</span>
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="sidebar-nav-item flex items-center gap-3 w-full text-left mt-2"
+            >
+              <LogOut className="w-4 h-4 text-[#CED4DA]" strokeWidth={1.5} />
+              <span className="text-sm text-[#CED4DA]">Sign Out</span>
+            </button>
+          </div>
         </aside>
 
         <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0D1117] border-b border-[rgba(255,255,255,0.08)] p-4">
@@ -296,6 +313,24 @@ export default function Layout({ children, currentPageName }) {
                   })}
                 </div>
               ))}
+
+              <div className="mt-6 pt-4 border-t border-[rgba(255,255,255,0.08)]">
+                <Link
+                  to={createPageUrl("Settings")}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`sidebar-nav-item flex items-center gap-3 ${location.pathname === createPageUrl("Settings") ? 'active' : ''}`}
+                >
+                  <Settings className="w-4 h-4 text-[#CED4DA]" strokeWidth={1.5} />
+                  <span className="text-sm text-[#CED4DA]">Settings</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="sidebar-nav-item flex items-center gap-3 w-full text-left mt-2"
+                >
+                  <LogOut className="w-4 h-4 text-[#CED4DA]" strokeWidth={1.5} />
+                  <span className="text-sm text-[#CED4DA]">Sign Out</span>
+                </button>
+              </div>
             </nav>
           </div>
         )}
