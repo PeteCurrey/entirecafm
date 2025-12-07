@@ -38,6 +38,7 @@ import EngineerMobile from './pages/EngineerMobile';
 import BulkDataWizard from './pages/BulkDataWizard';
 import ClientDocuments from './pages/ClientDocuments';
 import ClientMessages from './pages/ClientMessages';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
@@ -82,6 +83,7 @@ export const PAGES = {
     "BulkDataWizard": BulkDataWizard,
     "ClientDocuments": ClientDocuments,
     "ClientMessages": ClientMessages,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {
