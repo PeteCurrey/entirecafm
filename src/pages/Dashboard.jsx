@@ -112,30 +112,53 @@ export default function Dashboard() {
           {/* KPI Cards - Row of 4 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Open Jobs */}
-            <div className="glass-panel rounded-xl p-[18px] border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)] transition-all">
-              <div className="text-sm text-[#CED4DA] mb-1">Open Jobs</div>
-              <div className="text-3xl font-semibold text-white">{activeJobs}</div>
+            <div className="data-card hover-glow group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-medium text-[#CED4DA]">Open Jobs</div>
+                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                  <Wrench className="w-5 h-5 text-blue-400" strokeWidth={1.5} />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-white mb-1">{activeJobs}</div>
+              <div className="h-1 w-full bg-gradient-to-r from-blue-500/20 to-transparent rounded-full" />
             </div>
 
             {/* SLA At Risk */}
-            <div className="glass-panel rounded-xl p-[18px] border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)] transition-all">
-              <div className="text-sm text-[#CED4DA] mb-1">SLA At Risk</div>
-              <div className="text-3xl font-semibold text-white">{slaAtRisk}</div>
-              <div className="mt-2 h-0.5 w-8 bg-[#E1467C]/90 rounded-full" />
+            <div className="data-card hover-glow group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-medium text-[#CED4DA]">SLA At Risk</div>
+                <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/20 transition-colors">
+                  <AlertCircle className="w-5 h-5 text-red-400" strokeWidth={1.5} />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-white mb-1">{slaAtRisk}</div>
+              <div className="h-1 w-full bg-gradient-to-r from-red-500/30 to-transparent rounded-full" />
             </div>
 
             {/* PPM Due */}
-            <div className="glass-panel rounded-xl p-[18px] border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)] transition-all">
-              <div className="text-sm text-[#CED4DA] mb-1">PPM Due This Week</div>
-              <div className="text-3xl font-semibold text-white">{ppmDue}</div>
+            <div className="data-card hover-glow group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-medium text-[#CED4DA]">PPM Due This Week</div>
+                <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                  <Calendar className="w-5 h-5 text-purple-400" strokeWidth={1.5} />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-white mb-1">{ppmDue}</div>
+              <div className="h-1 w-full bg-gradient-to-r from-purple-500/20 to-transparent rounded-full" />
             </div>
 
             {/* Overdue */}
-            <div className="glass-panel rounded-xl p-[18px] border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)] transition-all">
-              <div className="text-sm text-[#CED4DA] mb-1">Overdue</div>
-              <div className={`text-3xl font-semibold transition-colors ${overdueJobs > 5 ? 'text-[#E1467C]' : 'text-white'}`}>
+            <div className="data-card hover-glow group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-medium text-[#CED4DA]">Overdue</div>
+                <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
+                  <Clock className="w-5 h-5 text-orange-400" strokeWidth={1.5} />
+                </div>
+              </div>
+              <div className={`text-3xl font-bold mb-1 transition-colors ${overdueJobs > 5 ? 'text-[#E1467C]' : 'text-white'}`}>
                 {overdueJobs}
               </div>
+              <div className={`h-1 w-full rounded-full ${overdueJobs > 5 ? 'bg-gradient-to-r from-red-500/30 to-transparent' : 'bg-gradient-to-r from-green-500/20 to-transparent'}`} />
             </div>
           </div>
 
@@ -181,9 +204,25 @@ export default function Dashboard() {
       </div>
 
       <style>{`
-        .glass-panel:hover {
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        @keyframes slideInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
+
+        .data-card {
+          animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .data-card:nth-child(1) { animation-delay: 0.1s; opacity: 0; }
+        .data-card:nth-child(2) { animation-delay: 0.2s; opacity: 0; }
+        .data-card:nth-child(3) { animation-delay: 0.3s; opacity: 0; }
+        .data-card:nth-child(4) { animation-delay: 0.4s; opacity: 0; }
       `}</style>
     </>
   );
