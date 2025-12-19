@@ -74,11 +74,17 @@ const navigationSections = [
     ]
   },
   {
+    title: "MOBILE APPS",
+    items: [
+      { title: "Engineer Mobile App", url: createPageUrl("EngineerMobile"), icon: Navigation, page: "EngineerMobile" },
+      { title: "Client Mobile App", url: createPageUrl("ClientMobile"), icon: Navigation, page: "ClientMobile" },
+    ]
+  },
+  {
     title: "TESTING & DEV",
     items: [
       { title: "Engineer Simulator", url: createPageUrl("EngineerSimulator"), icon: Navigation, page: "EngineerSimulator" },
       { title: "Test Redis Real-Time", url: createPageUrl("TestRedis"), icon: Bot, page: "TestRedis" },
-      { title: "Mobile Field App", url: createPageUrl("EngineerMobile"), icon: Navigation, page: "EngineerMobile" },
     ]
   },
   {

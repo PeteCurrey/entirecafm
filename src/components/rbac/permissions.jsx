@@ -105,6 +105,8 @@ export const PAGE_PERMISSIONS = {
   AIHelpdesk: [ROLES.ADMIN, ROLES.HELPDESK],
   ExecutiveBrief: [ROLES.ADMIN],
   ClientPortal: [ROLES.CLIENT],
+  ClientMobile: [ROLES.CLIENT],
+  EngineerMobile: [ROLES.ENGINEER, ROLES.ADMIN],
   Settings: [ROLES.ADMIN, ROLES.ENGINEER, ROLES.HELPDESK, ROLES.FINANCE, ROLES.CLIENT]
 };
 
