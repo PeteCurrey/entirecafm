@@ -57,7 +57,7 @@ const navigationSections = [
       { title: "Contractors", url: createPageUrl("Team"), icon: UserCheck, page: "Team" },
       { title: "Invoices", url: createPageUrl("Invoices"), icon: DollarSign, page: "Invoices" },
       { title: "Documents", url: createPageUrl("Documents"), icon: FolderOpen, page: "Documents" },
-      { title: "Reports", url: createPageUrl("Reports"), icon: BarChart3, page: "Reports" },
+      { title: "Analytics", url: createPageUrl("Analytics"), icon: BarChart3, page: "Analytics" },
       { title: "Approvals", url: createPageUrl("Approvals"), icon: CheckSquare, page: "Approvals" },
       { title: "Compliance & ESG", url: createPageUrl("Compliance"), icon: Shield, page: "Compliance" },
     ]

@@ -265,6 +265,12 @@
     letter-spacing: -0.02em;
   }
 
+  /* Chart Styling */
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: rgba(255, 255, 255, 0.1);
+  }
+
   /* Section Titles */
   .section-title {
     font-family: 'Montserrat', sans-serif;

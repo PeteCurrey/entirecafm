@@ -99,6 +99,7 @@ export const PAGE_PERMISSIONS = {
   Assets: [ROLES.ADMIN, ROLES.ENGINEER],
   Team: [ROLES.ADMIN],
   Reports: [ROLES.ADMIN, ROLES.FINANCE],
+  Analytics: [ROLES.ADMIN, ROLES.FINANCE],
   Approvals: [ROLES.ADMIN],
   MapTracking: [ROLES.ADMIN, ROLES.HELPDESK],
   Compliance: [ROLES.ADMIN],
