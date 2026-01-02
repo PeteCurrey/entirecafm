@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,7 +26,13 @@ export default function ClientRequestJobPage() {
     priority: 'medium',
     site_id: '',
     building_id: '',
+    asset_id: '',
+    preferred_date: '',
+    contact_name: '',
+    contact_phone: '',
+    attachments: []
   });
+  const [uploadingFiles, setUploadingFiles] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -59,6 +65,12 @@ export default function ClientRequestJobPage() {
     enabled: !!formData.site_id,
   });
 
+  const { data: assets = [] } = useQuery({
+    queryKey: ['assets', formData.site_id],
+    queryFn: () => base44.entities.Asset.filter({ site_id: formData.site_id }),
+    enabled: !!formData.site_id,
+  });
+
   const createJobMutation = useMutation({
     mutationFn: async (jobData) => {
       return base44.entities.Job.create({
@@ -76,6 +88,33 @@ export default function ClientRequestJobPage() {
       toast.error('Failed to submit job request');
     },
   });
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setUploadingFiles(true);
+    try {
+      const uploadedUrls = [];
+      for (const file of files) {
+        const result = await base44.integrations.Core.UploadFile({ file });
+        uploadedUrls.push(result.file_url);
+      }
+      setFormData(prev => ({ ...prev, attachments: [...prev.attachments, ...uploadedUrls] }));
+      toast.success(`${files.length} file(s) uploaded`);
+    } catch (error) {
+      toast.error('Failed to upload files');
+    } finally {
+      setUploadingFiles(false);
+    }
+  };
+
+  const removeAttachment = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -164,6 +203,27 @@ export default function ClientRequestJobPage() {
             </div>
           )}
 
+          {assets.length > 0 && (
+            <div>
+              <Label className="text-white mb-2">Asset (Optional)</Label>
+              <Select
+                value={formData.asset_id}
+                onValueChange={(value) => setFormData({ ...formData, asset_id: value })}
+              >
+                <SelectTrigger className="glass-panel border-divider text-white">
+                  <SelectValue placeholder="Select asset" />
+                </SelectTrigger>
+                <SelectContent>
+                  {assets.map((asset) => (
+                    <SelectItem key={asset.id} value={asset.id}>
+                      {asset.name} - {asset.asset_type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div>
             <Label className="text-white mb-2">Priority</Label>
             <Select
@@ -180,6 +240,81 @@ export default function ClientRequestJobPage() {
                 <SelectItem value="critical">Critical</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <Label className="text-white mb-2">Preferred Date</Label>
+            <Input
+              type="date"
+              value={formData.preferred_date}
+              onChange={(e) => setFormData({ ...formData, preferred_date: e.target.value })}
+              className="glass-panel border-divider text-white"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-white mb-2">Contact Name</Label>
+              <Input
+                value={formData.contact_name}
+                onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                placeholder="Your name"
+                className="glass-panel border-divider text-white"
+              />
+            </div>
+            <div>
+              <Label className="text-white mb-2">Contact Phone</Label>
+              <Input
+                type="tel"
+                value={formData.contact_phone}
+                onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+                placeholder="Your phone number"
+                className="glass-panel border-divider text-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-white mb-2">Attachments</Label>
+            <div className="glass-panel rounded-lg p-4 border border-dashed border-divider">
+              <input
+                type="file"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+                id="file-upload"
+                accept="image/*,.pdf,.doc,.docx"
+              />
+              <label
+                htmlFor="file-upload"
+                className="flex flex-col items-center justify-center cursor-pointer py-4"
+              >
+                <Upload className="w-8 h-8 text-[#CED4DA] mb-2" />
+                <p className="text-sm text-[#CED4DA]">
+                  {uploadingFiles ? 'Uploading...' : 'Click to upload photos or documents'}
+                </p>
+              </label>
+              
+              {formData.attachments.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {formData.attachments.map((url, index) => (
+                    <div key={index} className="flex items-center justify-between glass-panel rounded p-2 border border-divider">
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4 text-[#E1467C]" />
+                        <span className="text-sm text-white">Attachment {index + 1}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -12,7 +14,11 @@ import {
   CheckCircle2,
   Navigation,
   Phone,
-  MessageCircle
+  MessageCircle,
+  Upload,
+  FileText,
+  Download,
+  X
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +27,10 @@ import { format } from "date-fns";
 export default function ClientJobDetailPage() {
   const [searchParams] = useSearchParams();
   const jobId = searchParams.get('id');
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [showEngineerMap, setShowEngineerMap] = useState(false);
 
   const { data: job } = useQuery({
     queryKey: ['job', jobId],
@@ -43,6 +53,62 @@ export default function ClientJobDetailPage() {
     select: (data) => data[0],
     enabled: !!job?.assigned_engineer_id,
   });
+
+  const { data: documents = [] } = useQuery({
+    queryKey: ['job-documents', jobId],
+    queryFn: () => base44.entities.ClientDocument.filter({ job_id: jobId }),
+    enabled: !!jobId
+  });
+
+  const { data: engineerLocation } = useQuery({
+    queryKey: ['engineer-location', engineer?.id],
+    queryFn: async () => {
+      const locations = await base44.entities.EngineerLocation.filter(
+        { engineer_id: engineer.id },
+        '-timestamp',
+        1
+      );
+      return locations[0];
+    },
+    enabled: !!engineer?.id && ['on_route', 'en_route', 'on_site'].includes(job?.status),
+    refetchInterval: 10000 // Update every 10s
+  });
+
+  const queryClient = useQueryClient();
+
+  const uploadMutation = useMutation({
+    mutationFn: async (fileData) => {
+      const uploadResult = await base44.integrations.Core.UploadFile({ file: fileData });
+      return base44.entities.ClientDocument.create({
+        client_id: job.client_id,
+        job_id: jobId,
+        name: fileData.name,
+        file_url: uploadResult.file_url,
+        file_type: fileData.type,
+        file_size: fileData.size,
+        category: 'other',
+        uploaded_by: job.client_id,
+        uploaded_by_name: 'Client',
+        is_visible_to_client: true
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['job-documents']);
+      setShowUploadDialog(false);
+      setUploadFile(null);
+      toast.success('Document uploaded successfully');
+    },
+    onError: () => {
+      toast.error('Failed to upload document');
+    }
+  });
+
+  const handleUpload = () => {
+    if (!uploadFile) return;
+    setUploading(true);
+    uploadMutation.mutate(uploadFile);
+    setUploading(false);
+  };
 
   const statusColors = {
     raised: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
@@ -96,6 +162,24 @@ export default function ClientJobDetailPage() {
               <Badge className={`${statusColors[job.status]} border text-sm px-4 py-2`}>
                 {job.status.replace('_', ' ')}
               </Badge>
+              <Button 
+                onClick={() => setShowUploadDialog(true)}
+                variant="outline"
+                className="border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Doc
+              </Button>
+              {engineer && ['on_route', 'en_route', 'on_site'].includes(job.status) && (
+                <Button
+                  onClick={() => setShowEngineerMap(true)}
+                  variant="outline"
+                  className="border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
+                >
+                  <Navigation className="w-4 h-4 mr-2" />
+                  Track Engineer
+                </Button>
+              )}
               <Link to={createPageUrl("ClientMessages")}>
                 <Button className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white">
                   <MessageCircle className="w-4 h-4 mr-2" />
@@ -204,6 +288,31 @@ export default function ClientJobDetailPage() {
           </div>
         </div>
 
+        {/* Job Documents */}
+        {documents.length > 0 && (
+          <div className="glass-panel rounded-2xl p-6 border border-divider">
+            <h2 className="text-lg font-bold text-white mb-4">Attached Documents</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {documents.map(doc => (
+                <div key={doc.id} className="glass-panel rounded-lg p-4 border border-divider flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-[#E1467C]" />
+                    <div>
+                      <p className="text-white text-sm font-semibold">{doc.name}</p>
+                      <p className="text-xs text-body">{(doc.file_size / 1024).toFixed(1)} KB</p>
+                    </div>
+                  </div>
+                  <a href={doc.file_url} download target="_blank" rel="noopener noreferrer">
+                    <Button size="sm" variant="ghost" className="text-[#CED4DA]">
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Completion Details */}
         {job.status === 'completed' && (
           <div className="glass-panel rounded-2xl p-6 border border-divider">
@@ -237,6 +346,76 @@ export default function ClientJobDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="glass-panel-strong border-[rgba(255,255,255,0.1)]">
+          <DialogHeader>
+            <DialogTitle className="text-white">Upload Document</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <input
+              type="file"
+              onChange={(e) => setUploadFile(e.target.files[0])}
+              className="w-full text-white"
+            />
+            <div className="flex gap-3 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowUploadDialog(false)}
+                className="border-[rgba(255,255,255,0.08)] text-[#CED4DA]"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleUpload}
+                disabled={!uploadFile || uploading}
+                className="bg-[#E1467C] hover:bg-[#E1467C]/90 text-white"
+              >
+                {uploading ? 'Uploading...' : 'Upload'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Engineer Tracking Dialog */}
+      <Dialog open={showEngineerMap} onOpenChange={setShowEngineerMap}>
+        <DialogContent className="glass-panel-strong border-[rgba(255,255,255,0.1)] max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white">Live Engineer Tracking</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {engineerLocation ? (
+              <div>
+                <div className="glass-panel rounded-lg p-4 border border-divider mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-[#CED4DA]">Engineer</span>
+                    <span className="text-white font-semibold">{engineer?.full_name}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[#CED4DA]">Last Updated</span>
+                    <span className="text-white text-sm">
+                      {new Date(engineerLocation.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="w-full h-64 bg-[#0D1117] rounded-lg border border-divider flex items-center justify-center">
+                  <p className="text-[#CED4DA]">Map view: Lat {engineerLocation.lat.toFixed(4)}, Lng {engineerLocation.lng.toFixed(4)}</p>
+                </div>
+                <p className="text-xs text-[#CED4DA] text-center mt-2">
+                  Real-time tracking active • Updates every 10 seconds
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Navigation className="w-12 h-12 mx-auto mb-4 text-[#CED4DA] opacity-30" />
+                <p className="text-[#CED4DA]">Engineer location unavailable</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
