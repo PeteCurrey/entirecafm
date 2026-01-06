@@ -17,9 +17,9 @@ export default function HomePage() {
           navigate(createPageUrl("Dashboard"));
         }
       } catch (error) {
+
         // User not authenticated, show landing page
-      }
-    };
+      }};
     checkAuth();
   }, [navigate]);
 
@@ -39,8 +39,8 @@ export default function HomePage() {
                 <Wrench className="w-6 h-6 text-white" strokeWidth={2} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">
-                  ENTIRE<span className="text-[#E1467C]">CAFM</span>
+                <h1 className="text-2xl font-bold text-white">EntireCAFM
+
                 </h1>
                 <p className="text-xs text-[#8B949E] uppercase tracking-wider">AI-Powered Operations</p>
               </div>
@@ -57,26 +57,26 @@ export default function HomePage() {
           {/* Features List */}
           <div className="space-y-4 py-6">
             {[
-              'Real-time job tracking & engineer dispatch',
-              'AI-driven insights & forecasting',
-              'Client portal & automated workflows',
-              'Compliance tracking & ESG metrics'
-            ].map((feature, idx) => (
-              <div key={idx} className="flex items-start gap-3">
+            'Real-time job tracking & engineer dispatch',
+            'AI-driven insights & forecasting',
+            'Client portal & automated workflows',
+            'Compliance tracking & ESG metrics'].
+            map((feature, idx) =>
+            <div key={idx} className="flex items-start gap-3">
                 <div className="w-5 h-5 rounded-full bg-[#E1467C]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <div className="w-2 h-2 rounded-full bg-[#E1467C]" />
                 </div>
                 <p className="text-[#CED4DA] text-sm">{feature}</p>
               </div>
-            ))}
+            )}
           </div>
 
           {/* CTA Buttons */}
           <div className="space-y-4 pt-4">
             <Button
               onClick={handleLogin}
-              className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-[#E41E65] to-[#C13666] hover:from-[#F02570] hover:to-[#D13E70] text-white rounded-xl magenta-glow transition-all group"
-            >
+              className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-[#E41E65] to-[#C13666] hover:from-[#F02570] hover:to-[#D13E70] text-white rounded-xl magenta-glow transition-all group">
+
               Sign In
               <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" strokeWidth={2} />
             </Button>
@@ -92,8 +92,8 @@ export default function HomePage() {
 
             <Button
               variant="outline"
-              className="w-full h-14 text-lg font-semibold glass-panel border-[rgba(255,255,255,0.1)] text-white hover:border-[rgba(255,255,255,0.2)] rounded-xl"
-            >
+              className="w-full h-14 text-lg font-semibold glass-panel border-[rgba(255,255,255,0.1)] text-white hover:border-[rgba(255,255,255,0.2)] rounded-xl">
+
               Request Access
             </Button>
           </div>
@@ -116,8 +116,8 @@ export default function HomePage() {
         <img
           src="https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=2000&auto=format&fit=crop"
           alt="London Cityscape"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+          className="absolute inset-0 w-full h-full object-cover" />
+
 
         {/* Floating Stats Card */}
         <div className="absolute bottom-12 left-12 right-12 z-20">
@@ -172,6 +172,6 @@ export default function HomePage() {
           animation: float 6s ease-in-out infinite;
         }
       `}</style>
-    </div>
-  );
+    </div>);
+
 }
