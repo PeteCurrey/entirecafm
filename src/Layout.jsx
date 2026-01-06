@@ -99,6 +99,7 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -108,14 +109,43 @@ export default function Layout({ children, currentPageName }) {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
-      setUser(userData);
+      const isAuth = await base44.auth.isAuthenticated();
       
-      if (userData && !userData.onboarded) {
-        setShowOnboarding(true);
+      if (!isAuth && currentPageName !== 'Home') {
+        navigate(createPageUrl("Home"));
+        setLoading(false);
+        return;
       }
+
+      if (isAuth) {
+        const userData = await base44.auth.me();
+        setUser(userData);
+        
+        // Role-based dashboard redirection
+        if (currentPageName === 'Home') {
+          const userRole = getUserRole(userData);
+          if (userRole === ROLES.CLIENT) {
+            navigate(createPageUrl("ClientPortal"));
+          } else if (userRole === ROLES.ENGINEER) {
+            navigate(createPageUrl("EngineerMobile"));
+          } else {
+            navigate(createPageUrl("Dashboard"));
+          }
+          return;
+        }
+        
+        if (userData && !userData.onboarded) {
+          setShowOnboarding(true);
+        }
+      }
+      
+      setLoading(false);
     } catch (error) {
       console.error("Error loading user:", error);
+      if (currentPageName !== 'Home') {
+        navigate(createPageUrl("Home"));
+      }
+      setLoading(false);
     }
   };
 
@@ -143,6 +173,28 @@ export default function Layout({ children, currentPageName }) {
     ...section,
     items: section.items.filter(item => hasPagePermission(userRole, item.page))
   })).filter(section => section.items.length > 0);
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0D1117] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[rgba(255,255,255,0.3)] border-t-white rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#CED4DA]">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If on Home page, render without layout
+  if (currentPageName === 'Home') {
+    return <>{children}</>;
+  }
+
+  // If not authenticated and not on Home, don't render (redirect handled in loadUser)
+  if (!user) {
+    return null;
+  }
 
   return (
     <>

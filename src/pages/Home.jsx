@@ -9,19 +9,8 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already authenticated, redirect to dashboard
-    const checkAuth = async () => {
-      try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (isAuth) {
-          navigate(createPageUrl("Dashboard"));
-        }
-      } catch (error) {
-        // User not authenticated, show landing page
-      }
-    };
-    checkAuth();
-  }, [navigate]);
+    // Authentication check is handled by Layout component
+  }, []);
 
   const handleLogin = () => {
     base44.auth.redirectToLogin(createPageUrl("Dashboard"));

@@ -85,6 +85,7 @@ export const FUNCTION_PERMISSIONS = {
 
 // Page-level permissions: { pageName: [allowedRoles] }
 export const PAGE_PERMISSIONS = {
+  Home: [], // Public page - no authentication required
   BulkDataWizard: [ROLES.ADMIN],
   Dashboard: [ROLES.ADMIN, ROLES.ENGINEER, ROLES.HELPDESK, ROLES.FINANCE],
   DataImport: [ROLES.ADMIN],
