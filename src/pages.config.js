@@ -4,6 +4,7 @@ import AIDirector from './pages/AIDirector';
 import AIHelpdesk from './pages/AIHelpdesk';
 import AILeads from './pages/AILeads';
 import AIMarketing from './pages/AIMarketing';
+import Analytics from './pages/Analytics';
 import Approvals from './pages/Approvals';
 import Assets from './pages/Assets';
 import AssetsPredict from './pages/AssetsPredict';
@@ -41,7 +42,6 @@ import Sites from './pages/Sites';
 import SystemDocumentation from './pages/SystemDocumentation';
 import Team from './pages/Team';
 import TestRedis from './pages/TestRedis';
-import Analytics from './pages/Analytics';
 import __Layout from './Layout.jsx';
 
 
@@ -52,6 +52,7 @@ export const PAGES = {
     "AIHelpdesk": AIHelpdesk,
     "AILeads": AILeads,
     "AIMarketing": AIMarketing,
+    "Analytics": Analytics,
     "Approvals": Approvals,
     "Assets": Assets,
     "AssetsPredict": AssetsPredict,
@@ -89,7 +90,6 @@ export const PAGES = {
     "SystemDocumentation": SystemDocumentation,
     "Team": Team,
     "TestRedis": TestRedis,
-    "Analytics": Analytics,
 }
 
 export const pagesConfig = {
