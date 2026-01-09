@@ -129,6 +129,7 @@ export function hasFunctionPermission(role, functionName) {
 export function hasPagePermission(role, pageName) {
   const allowedRoles = PAGE_PERMISSIONS[pageName];
   if (!allowedRoles) return true; // If not defined, allow all
+  if (allowedRoles.length === 0) return true; // Empty array means public page
   return allowedRoles.includes(role);
 }
 
