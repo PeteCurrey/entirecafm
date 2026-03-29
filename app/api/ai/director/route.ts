@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     }
     const ppmComplianceAvg = ppmTotal === 0 ? 100 : Math.round((ppmCompleted / ppmTotal) * 100);
     const engineerUtilisation = engineerJobCounts.length > 0
-      ? (engineerJobCounts.reduce((s, e: any) => s + e._count.jobs, 0) / engineerJobCounts.length).toFixed(1)
+      ? (engineerJobCounts.reduce((s: number, e: any) => s + e._count.jobs, 0) / engineerJobCounts.length).toFixed(1)
       : '0';
 
     const criticalJobsList = criticalJobs.map((j: any) => ({ title: j.title, client: j.client?.name || 'Unknown', id: j.id }));
