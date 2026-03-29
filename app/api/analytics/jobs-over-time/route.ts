@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
     // Group by date
     const dateMap: Record<string, number> = {};
-    jobs.forEach(j => {
+    jobs.forEach((j: any) => {
       const d = j.createdAt.toISOString().split('T')[0];
       dateMap[d] = (dateMap[d] || 0) + 1;
     });
