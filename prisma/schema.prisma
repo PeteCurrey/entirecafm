@@ -1,0 +1,333 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  OPERATIONS_MANAGER
+  ENGINEER
+  CLIENT
+  CONTRACTOR
+}
+
+enum JobStatus {
+  NEW
+  ASSIGNED
+  ON_ROUTE
+  ON_SITE
+  COMPLETED
+  INVOICED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum JobType {
+  REACTIVE
+  PPM
+  INSPECTION
+  QUOTE
+  PROJECT
+}
+
+enum AssetStatus {
+  OPERATIONAL
+  REQUIRES_ATTENTION
+  OUT_OF_SERVICE
+  DECOMMISSIONED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model User {
+  id          String    @id @default(uuid())
+  supabaseId  String    @unique
+  email       String    @unique
+  name        String
+  role        Role      @default(ENGINEER)
+  avatar      String?
+  phone       String?
+  skills      String[]
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  jobs        Job[]     @relation("AssignedEngineer")
+  location    EngineerLocation?
+}
+
+model Client {
+  id          String    @id @default(uuid())
+  name        String
+  contactName String
+  email       String    @unique
+  phone       String?
+  address     String?
+  logo        String?
+  portalEnabled Boolean @default(false)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  sites       Site[]
+  jobs        Job[]
+  invoices    Invoice[]
+  quotes      Quote[]
+  requests    Request[]
+  documents   Document[]
+  esgData     ESGData[]
+}
+
+model Site {
+  id          String    @id @default(uuid())
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id])
+  name        String
+  address     String
+  postcode    String
+  lat         Float?
+  lng         Float?
+  siteType    String?
+  sqFootage   Int?
+  floors      Int?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  assets      Asset[]
+  jobs        Job[]
+  ppmPlans    PPMPlan[]
+  requests    Request[]
+  documents   Document[]
+}
+
+model Job {
+  id            String      @id @default(uuid())
+  jobNumber     String      @unique
+  clientId      String
+  client        Client      @relation(fields: [clientId], references: [id])
+  siteId        String
+  site          Site        @relation(fields: [siteId], references: [id])
+  engineerId    String?
+  engineer      User?       @relation("AssignedEngineer", fields: [engineerId], references: [id])
+  contractorId  String?
+  contractor    Contractor? @relation(fields: [contractorId], references: [id])
+  title         String
+  description   String?
+  priority      Priority    @default(MEDIUM)
+  status        JobStatus   @default(NEW)
+  type          JobType     @default(REACTIVE)
+  slaDeadline   DateTime?
+  scheduledDate DateTime?
+  completedAt   DateTime?
+  invoiceId     String?
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  documents     Document[]
+  activities    JobActivity[]
+}
+
+model JobActivity {
+  id          String   @id @default(uuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id])
+  userId      String?
+  type        String
+  content     String
+  createdAt   DateTime @default(now())
+}
+
+model Asset {
+  id           String      @id @default(uuid())
+  siteId       String
+  site         Site        @relation(fields: [siteId], references: [id])
+  name         String
+  category     String
+  make         String?
+  model        String?
+  serialNumber String?
+  location     String?
+  installDate  DateTime?
+  warrantyExp  DateTime?
+  lastService  DateTime?
+  nextService  DateTime?
+  status       AssetStatus @default(OPERATIONAL)
+  criticality  String      @default("Medium")
+  isStatutory  Boolean     @default(false)
+  notes        String?
+  qrCode       String?
+  createdAt    DateTime    @default(now())
+  ppmTasks     PPMTask[]
+  documents    Document[]
+}
+
+model PPMPlan {
+  id        String    @id @default(uuid())
+  siteId    String
+  site      Site      @relation(fields: [siteId], references: [id])
+  name      String
+  year      Int
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  tasks     PPMTask[]
+}
+
+model PPMTask {
+  id          String    @id @default(uuid())
+  planId      String
+  plan        PPMPlan   @relation(fields: [planId], references: [id])
+  assetId     String?
+  asset       Asset?    @relation(fields: [assetId], references: [id])
+  title       String
+  frequency   String
+  standard    String?
+  isStatutory Boolean     @default(false)
+  monthsDue   Int[]
+  lastDone    DateTime?
+  nextDue     DateTime?
+  status      String    @default("Scheduled")
+  completedAt DateTime?
+  completedBy String?
+  certificate String?
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id])
+  lineItems     Json
+  subtotal      Float
+  tax           Float         @default(0)
+  total         Float
+  status        InvoiceStatus @default(DRAFT)
+  dueDate       DateTime?
+  paidAt        DateTime?
+  notes         String?
+  createdAt     DateTime      @default(now())
+}
+
+model Quote {
+  id          String   @id @default(uuid())
+  quoteNumber String   @unique
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id])
+  siteId      String
+  title       String
+  lineItems   Json
+  subtotal    Float
+  tax         Float
+  total       Float
+  status      String   @default("Draft")
+  validUntil  DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+model Request {
+  id               String   @id @default(uuid())
+  clientId         String
+  client           Client   @relation(fields: [clientId], references: [id])
+  siteId           String
+  site             Site     @relation(fields: [siteId], references: [id])
+  title            String
+  description      String
+  priority         Priority @default(MEDIUM)
+  status           String   @default("Pending")
+  convertedToJobId String?
+  createdAt        DateTime @default(now())
+}
+
+model Contractor {
+  id        String   @id @default(uuid())
+  name      String
+  contact   String
+  email     String    @unique
+  phone     String?
+  trades    String[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  jobs        Job[]
+  documents   Document[]
+}
+
+model EngineerLocation {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  lat       Float
+  lng       Float
+  updatedAt DateTime @updatedAt
+}
+
+model Document {
+  id         String   @id @default(uuid())
+  jobId      String?
+  job        Job?     @relation(fields: [jobId], references: [id])
+  assetId    String?
+  asset      Asset?   @relation(fields: [assetId], references: [id])
+  clientId   String?
+  client     Client?  @relation(fields: [clientId], references: [id])
+  siteId     String?
+  site       Site?    @relation(fields: [siteId], references: [id])
+  contractorId String?
+  contractor Contractor? @relation(fields: [contractorId], references: [id])
+  name       String
+  url        String
+  type       String
+  size       Int?
+  folder     String?  @default("Other")
+  expiryDate DateTime?
+  uploadedAt DateTime @default(now())
+  uploadedBy String?
+}
+
+model Approval {
+  id          String   @id @default(uuid())
+  type        String
+  description String
+  requestedBy String
+  value       Float?
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  activities  ApprovalActivity[]
+}
+
+model ApprovalActivity {
+  id          String   @id @default(uuid())
+  approvalId  String
+  approval    Approval @relation(fields: [approvalId], references: [id])
+  userId      String
+  action      String
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+model ESGData {
+  id               String   @id @default(uuid())
+  clientId         String?
+  client           Client?  @relation(fields: [clientId], references: [id])
+  monthYear        String   // e.g. "2024-03"
+  carbonFootprint  Float?
+  electricityKwh   Float?
+  gasKwh           Float?
+  waterM3          Float?
+  wasteGenerated   Float?
+  wasteRecycled    Float?
+  vehicleMiles     Float?
+  recordedBy       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
