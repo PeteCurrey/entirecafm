@@ -32,8 +32,8 @@ export async function POST(req: Request) {
       prisma.user.findMany({ where: { role: 'ENGINEER', isActive: true }, include: { _count: { select: { jobs: true } } } })
     ]);
 
-    const revenueThisMonth = paidInvoicesThisMonth.reduce((s, i) => s + i.total, 0);
-    const outstandingBalance = outstandingInvoices.reduce((s, i) => s + i.total, 0);
+    const revenueThisMonth = paidInvoicesThisMonth.reduce((s: number, i: any) => s + i.total, 0);
+    const outstandingBalance = outstandingInvoices.reduce((s: number, i: any) => s + i.total, 0);
 
     // PPM compliance
     let ppmTotal = 0, ppmCompleted = 0, overduePPMCount = 0;
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       ? (engineerJobCounts.reduce((s, e: any) => s + e._count.jobs, 0) / engineerJobCounts.length).toFixed(1)
       : '0';
 
-    const criticalJobsList = criticalJobs.map(j => ({ title: j.title, client: j.client?.name || 'Unknown', id: j.id }));
+    const criticalJobsList = criticalJobs.map((j: any) => ({ title: j.title, client: j.client?.name || 'Unknown', id: j.id }));
 
     const userPrompt = `Current operational data:
 - Open jobs: ${openJobs}
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
 - Average PPM compliance across sites: ${ppmComplianceAvg}%
 - Overdue PPM tasks: ${overduePPMCount}
 - Critical jobs open: ${criticalJobsList.length}
-  ${criticalJobsList.map(j => `${j.title} — ${j.client}`).join(', ') || 'None'}
+  ${criticalJobsList.map((j: any) => `${j.title} — ${j.client}`).join(', ') || 'None'}
 - Engineer utilisation: ${engineerUtilisation} avg jobs per active engineer`;
 
     const message = await anthropic.messages.create({

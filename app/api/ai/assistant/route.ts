@@ -18,7 +18,7 @@ async function executeTool(name: string, input: Record<string, any>) {
         { jobNumber: { contains: input.query, mode: 'insensitive' } },
       ];
       const jobs = await prisma.job.findMany({ where, include: { client: true, site: true, engineer: true }, take: input.limit || 10, orderBy: { createdAt: 'desc' } });
-      return jobs.map(j => ({ id: j.id, jobNumber: j.jobNumber, title: j.title, status: j.status, priority: j.priority, client: j.client?.name, site: j.site?.name, engineer: j.engineer?.name }));
+      return jobs.map((j: any) => ({ id: j.id, jobNumber: j.jobNumber, title: j.title, status: j.status, priority: j.priority, client: j.client?.name, site: j.site?.name, engineer: j.engineer?.name }));
     }
     case 'get_client_summary': {
       const client = await prisma.client.findFirst({
@@ -30,7 +30,7 @@ async function executeTool(name: string, input: Record<string, any>) {
         }
       });
       if (!client) return { error: `No client found matching "${input.name}"` };
-      return { name: client.name, email: client.email, sites: client.sites.map(s => s.name), openJobs: client.jobs.length, outstandingInvoices: client.invoices.reduce((s, i) => s + i.total, 0), invoiceCount: client.invoices.length };
+      return { name: client.name, email: client.email, sites: client.sites.map((s: any) => s.name), openJobs: client.jobs.length, outstandingInvoices: client.invoices.reduce((s: number, i: any) => s + i.total, 0), invoiceCount: client.invoices.length };
     }
     case 'get_compliance_summary': {
       const sites = await prisma.site.findMany({
@@ -38,10 +38,10 @@ async function executeTool(name: string, input: Record<string, any>) {
         include: { ppmPlans: { include: { tasks: true } } }
       });
       const now = new Date();
-      return sites.map(s => {
-        const tasks = s.ppmPlans.flatMap(p => p.tasks);
-        const done = tasks.filter(t => t.status === 'COMPLETED').length;
-        const overdue = tasks.filter(t => t.nextDue && new Date(t.nextDue) < now && t.status !== 'COMPLETED').length;
+      return sites.map((s: any) => {
+        const tasks = s.ppmPlans.flatMap((p: any) => p.tasks);
+        const done = tasks.filter((t: any) => t.status === 'COMPLETED').length;
+        const overdue = tasks.filter((t: any) => t.nextDue && new Date(t.nextDue) < now && t.status !== 'COMPLETED').length;
         return { site: s.name, total: tasks.length, completed: done, compliance: tasks.length ? Math.round((done / tasks.length) * 100) : 100, overdue };
       });
     }
@@ -65,7 +65,7 @@ async function executeTool(name: string, input: Record<string, any>) {
         prisma.invoice.findMany({ where: { status: 'PAID', paidAt: { gte: som } }, select: { total: true } }),
         prisma.invoice.findMany({ where: { status: { in: ['SENT', 'OVERDUE'] } }, select: { total: true } }),
       ]);
-      return { openJobs: open, overdueJobs: overdue, revenueThisMonth: paid.reduce((s, i) => s + i.total, 0), outstandingBalance: outstanding.reduce((s, i) => s + i.total, 0) };
+      return { openJobs: open, overdueJobs: overdue, revenueThisMonth: paid.reduce((s: number, i: any) => s + i.total, 0), outstandingBalance: outstanding.reduce((s: number, i: any) => s + i.total, 0) };
     }
     case 'find_overdue_items': {
       const now = new Date();
@@ -75,7 +75,7 @@ async function executeTool(name: string, input: Record<string, any>) {
       }
       if (!input.type || input.type === 'ppm' || input.type === 'both') {
         const sites = await prisma.site.findMany({ include: { ppmPlans: { include: { tasks: true } } } });
-        result.overduePPM = sites.flatMap(s => s.ppmPlans.flatMap(p => p.tasks.filter(t => t.nextDue && new Date(t.nextDue) < now && t.status !== 'COMPLETED').map(t => ({ task: t.title, site: s.name, daysOverdue: Math.floor((now.getTime() - new Date(t.nextDue!).getTime()) / 86400000) }))));
+        result.overduePPM = sites.flatMap((s: any) => s.ppmPlans.flatMap((p: any) => p.tasks.filter((t: any) => t.nextDue && new Date(t.nextDue) < now && t.status !== 'COMPLETED').map((t: any) => ({ task: t.title, site: s.name, daysOverdue: Math.floor((now.getTime() - new Date(t.nextDue!).getTime()) / 86400000) }))));
       }
       return result;
     }

@@ -32,10 +32,10 @@ export async function POST() {
       prisma.user.count({ where: { role: 'ENGINEER', isActive: true } })
     ]);
 
-    const revThis = invoicesThisMonth.reduce((s, i) => s + i.total, 0);
-    const revLast = invoicesLastMonth.reduce((s, i) => s + i.total, 0);
-    const paidThis = invoicesThisMonth.filter(i => i.status === 'PAID').reduce((s, i) => s + i.total, 0);
-    const paidLast = invoicesLastMonth.filter(i => i.status === 'PAID').reduce((s, i) => s + i.total, 0);
+    const revThis = invoicesThisMonth.reduce((s: number, i: any) => s + i.total, 0);
+    const revLast = invoicesLastMonth.reduce((s: number, i: any) => s + i.total, 0);
+    const paidThis = invoicesThisMonth.filter((i: any) => i.status === 'PAID').reduce((s: number, i: any) => s + i.total, 0);
+    const paidLast = invoicesLastMonth.filter((i: any) => i.status === 'PAID').reduce((s: number, i: any) => s + i.total, 0);
 
     let ppmTotal = 0, ppmDone = 0, ppmOverdue = 0;
     for (const s of allSites) for (const p of s.ppmPlans) for (const t of p.tasks) {

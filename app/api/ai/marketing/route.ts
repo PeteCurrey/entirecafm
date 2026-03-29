@@ -25,22 +25,22 @@ export async function POST() {
 
     const monthlyNew = Array(12).fill(0).map((_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
-      const count = clients.filter(c => {
+      const count = clients.filter((c: any) => {
         const cd = new Date(c.createdAt);
         return cd.getFullYear() === d.getFullYear() && cd.getMonth() === d.getMonth();
       }).length;
       return { month: d.toLocaleString('default', { month: 'short', year: '2-digit' }), newClients: count };
     });
 
-    const clientSummaries = clients.map(c => ({
+    const clientSummaries = clients.map((c: any) => ({
       name: c.name,
       sites: c.sites.length,
       totalJobs: c.jobs.length,
-      jobTypes: [...new Set(c.jobs.map(j => j.type))],
-      completedJobs: c.jobs.filter(j => j.status === 'COMPLETED').length
+      jobTypes: [...new Set(c.jobs.map((j: any) => j.type))],
+      completedJobs: c.jobs.filter((j: any) => j.status === 'COMPLETED').length
     }));
 
-    const dataStr = `New clients last 12 months (monthly): ${JSON.stringify(monthlyNew)} | Client profiles: ${clientSummaries.map(c => `${c.name}: ${c.totalJobs} jobs, ${c.sites} sites, services: ${c.jobTypes.join(',')||'none'}`).join(' | ')}`;
+    const dataStr = `New clients last 12 months (monthly): ${JSON.stringify(monthlyNew)} | Client profiles: ${clientSummaries.map((c: any) => `${c.name}: ${c.totalJobs} jobs, ${c.sites} sites, services: ${c.jobTypes.join(',')||'none'}`).join(' | ')}`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5',
