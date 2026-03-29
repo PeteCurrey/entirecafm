@@ -40,10 +40,10 @@ export async function POST() {
     }
 
     const clientSummaries = Object.values(clientMap).sort((a, b) => b.outstanding - a.outstanding);
-    const totalPaidThisMonth = invoices.filter(i => i.status === 'PAID' && i.paidAt && new Date(i.paidAt) >= startOfMonth).reduce((s, i) => s + i.total, 0);
-    const totalOutstanding = invoices.filter(i => ['SENT', 'OVERDUE'].includes(i.status)).reduce((s, i) => s + i.total, 0);
+    const totalPaidThisMonth = invoices.filter((i: any) => i.status === 'PAID' && i.paidAt && new Date(i.paidAt) >= startOfMonth).reduce((s: number, i: any) => s + i.total, 0);
+    const totalOutstanding = invoices.filter((i: any) => ['SENT', 'OVERDUE'].includes(i.status)).reduce((s: number, i: any) => s + i.total, 0);
 
-    const dataString = `Cash received this month: £${totalPaidThisMonth.toLocaleString()} | Total outstanding: £${totalOutstanding.toLocaleString()} | Client breakdown: ${clientSummaries.map(c => `${c.name}: invoiced £${c.invoiced.toLocaleString()}, outstanding £${c.outstanding.toLocaleString()}, avg days to pay: ${c.daysToPayCount ? Math.round(c.daysToPaySum / c.daysToPayCount) : 'N/A'}`).join('; ')}`;
+    const dataString = `Cash received this month: £${totalPaidThisMonth.toLocaleString()} | Total outstanding: £${totalOutstanding.toLocaleString()} | Client breakdown: ${clientSummaries.map((c: any) => `${c.name}: invoiced £${c.invoiced.toLocaleString()}, outstanding £${c.outstanding.toLocaleString()}, avg days to pay: ${c.daysToPayCount ? Math.round(c.daysToPaySum / c.daysToPayCount) : 'N/A'}`).join('; ')}`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5',
