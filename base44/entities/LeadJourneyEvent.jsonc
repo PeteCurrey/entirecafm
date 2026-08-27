@@ -1,0 +1,40 @@
+{
+  "name": "LeadJourneyEvent",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string"
+    },
+    "lead_id": {
+      "type": "string",
+      "description": "Reference to LeadProfile"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "EMAIL_SENT",
+        "EMAIL_OPEN",
+        "QUOTE_SENT",
+        "QUOTE_APPROVED",
+        "JOB_COMPLETED",
+        "INVOICE_PAID",
+        "REOPENED",
+        "FOLLOW_UP_SENT"
+      ]
+    },
+    "event_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event_value": {
+      "type": "object",
+      "description": "Additional event data"
+    }
+  },
+  "required": [
+    "org_id",
+    "lead_id",
+    "event_type",
+    "event_timestamp"
+  ]
+}

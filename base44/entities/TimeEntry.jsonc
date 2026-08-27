@@ -1,0 +1,43 @@
+{
+  "name": "TimeEntry",
+  "type": "object",
+  "properties": {
+    "engineer_id": {
+      "type": "string",
+      "description": "User ID"
+    },
+    "job_id": {
+      "type": "string"
+    },
+    "clock_in": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "clock_out": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "duration_minutes": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "engineer_id",
+    "job_id",
+    "clock_in"
+  ]
+}

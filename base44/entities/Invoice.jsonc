@@ -1,0 +1,95 @@
+{
+  "name": "Invoice",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "invoice_number": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "job_id": {
+      "type": "string"
+    },
+    "quote_id": {
+      "type": "string"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "vat_amount": {
+      "type": "number"
+    },
+    "total": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "paid",
+        "overdue",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "payment_method": {
+      "type": "string"
+    },
+    "po_number": {
+      "type": "string"
+    },
+    "exported_to_accounting": {
+      "type": "boolean",
+      "default": false
+    },
+    "exported_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "org_id",
+    "client_id",
+    "issue_date",
+    "due_date",
+    "total"
+  ]
+}

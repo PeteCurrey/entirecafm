@@ -1,0 +1,71 @@
+{
+  "name": "PricebookItem",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "trade_category": {
+      "type": "string",
+      "enum": [
+        "plumbing",
+        "electrical",
+        "hvac",
+        "general_maintenance",
+        "fire_safety",
+        "security",
+        "lift",
+        "doors",
+        "roofing",
+        "glazing",
+        "carpentry",
+        "painting",
+        "flooring"
+      ],
+      "description": "Trade category for filtering and matching"
+    },
+    "item_name": {
+      "type": "string",
+      "description": "Name of the service or part"
+    },
+    "item_code": {
+      "type": "string",
+      "description": "SKU or item code for lookup"
+    },
+    "unit": {
+      "type": "string",
+      "description": "Unit of measure (e.g., each, hour, meter, sqm)",
+      "default": "each"
+    },
+    "unit_price": {
+      "type": "number",
+      "description": "Base unit price (before markup)"
+    },
+    "default_markup_pct": {
+      "type": "number",
+      "description": "Default markup percentage",
+      "default": 20
+    },
+    "default_labour_minutes": {
+      "type": "number",
+      "description": "Standard labour time for this item in minutes"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes or specifications"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether item is active in pricebook"
+    }
+  },
+  "required": [
+    "org_id",
+    "trade_category",
+    "item_name",
+    "unit",
+    "unit_price"
+  ]
+}

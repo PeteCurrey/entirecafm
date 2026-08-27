@@ -1,0 +1,40 @@
+{
+  "name": "ClientUser",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client entity"
+    },
+    "email": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "CLIENT_ADMIN",
+        "CLIENT_VIEWER"
+      ],
+      "default": "CLIENT_VIEWER"
+    },
+    "last_login": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "phone": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "client_id",
+    "email",
+    "name"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "name": "SustainabilityScore",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string"
+    },
+    "site_id": {
+      "type": "string"
+    },
+    "compliance_rate_pct": {
+      "type": "number"
+    },
+    "carbon_intensity": {
+      "type": "number"
+    },
+    "waste_diversion_pct": {
+      "type": "number"
+    },
+    "overall_esg_score": {
+      "type": "number",
+      "description": "0-100 score"
+    },
+    "rating": {
+      "type": "string",
+      "enum": [
+        "EXCELLENT",
+        "GOOD",
+        "FAIR",
+        "POOR"
+      ]
+    },
+    "computed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "org_id",
+    "overall_esg_score",
+    "rating"
+  ]
+}

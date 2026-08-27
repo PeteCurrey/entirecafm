@@ -1,0 +1,55 @@
+{
+  "name": "MarketingMetricsDaily",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Metrics date in YYYY-MM-DD format"
+    },
+    "leads": {
+      "type": "number",
+      "description": "Number of enquiries"
+    },
+    "quotes_sent": {
+      "type": "number",
+      "description": "Number of quotes sent"
+    },
+    "quotes_approved": {
+      "type": "number",
+      "description": "Number of quotes approved"
+    },
+    "conversion_rate": {
+      "type": "number",
+      "description": "quotes_approved / quotes_sent"
+    },
+    "avg_quote_value": {
+      "type": "number",
+      "description": "Average quote value"
+    },
+    "revenue_realised": {
+      "type": "number",
+      "description": "Total revenue from paid invoices"
+    },
+    "spend": {
+      "type": "number",
+      "description": "Marketing spend for the day"
+    },
+    "roi": {
+      "type": "number",
+      "description": "Return on investment (revenue / spend)"
+    },
+    "top_source": {
+      "type": "string",
+      "description": "Best performing source by ROI"
+    }
+  },
+  "required": [
+    "org_id",
+    "date"
+  ]
+}

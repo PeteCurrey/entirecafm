@@ -1,0 +1,169 @@
+{
+  "name": "Job",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "job_number": {
+      "type": "string",
+      "description": "Auto-generated job reference"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "job_type": {
+      "type": "string",
+      "enum": [
+        "reactive",
+        "ppm",
+        "project",
+        "emergency"
+      ],
+      "default": "reactive"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "assigned",
+        "on_route",
+        "on_site",
+        "completed",
+        "cancelled"
+      ],
+      "default": "new"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "site_id": {
+      "type": "string"
+    },
+    "building_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "assigned_engineer_id": {
+      "type": "string",
+      "description": "User ID of assigned engineer"
+    },
+    "assigned_contractor_id": {
+      "type": "string"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "scheduled_time": {
+      "type": "string"
+    },
+    "sla_due_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "po_number": {
+      "type": "string",
+      "description": "Purchase order number from client"
+    },
+    "quote_id": {
+      "type": "string",
+      "description": "Linked quote if converted"
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Original request if converted"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "completion_notes": {
+      "type": "string"
+    },
+    "completion_photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "parts_used": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "cost": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "time_on_site_minutes": {
+      "type": "number"
+    },
+    "customer_signature_url": {
+      "type": "string"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "invoice_id": {
+      "type": "string"
+    },
+    "requires_approval": {
+      "type": "boolean",
+      "default": false
+    },
+    "approved_by": {
+      "type": "string"
+    },
+    "approved_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "org_id",
+    "title",
+    "job_type",
+    "client_id",
+    "site_id"
+  ]
+}

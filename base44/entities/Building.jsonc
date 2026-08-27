@@ -1,0 +1,40 @@
+{
+  "name": "Building",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "name": {
+      "type": "string",
+      "description": "Building name"
+    },
+    "site_id": {
+      "type": "string",
+      "description": "Parent site ID"
+    },
+    "floor_count": {
+      "type": "number"
+    },
+    "building_type": {
+      "type": "string",
+      "enum": [
+        "office",
+        "warehouse",
+        "retail",
+        "residential",
+        "industrial",
+        "other"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "org_id",
+    "name",
+    "site_id"
+  ]
+}

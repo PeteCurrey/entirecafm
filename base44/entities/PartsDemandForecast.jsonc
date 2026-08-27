@@ -1,0 +1,39 @@
+{
+  "name": "PartsDemandForecast",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string"
+    },
+    "asset_type": {
+      "type": "string"
+    },
+    "part_sku": {
+      "type": "string"
+    },
+    "part_name": {
+      "type": "string"
+    },
+    "horizon_days": {
+      "type": "number",
+      "default": 90
+    },
+    "expected_usage_qty": {
+      "type": "number"
+    },
+    "confidence": {
+      "type": "number",
+      "description": "0-1 confidence score"
+    },
+    "computed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "org_id",
+    "asset_type",
+    "part_sku",
+    "expected_usage_qty"
+  ]
+}

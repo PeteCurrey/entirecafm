@@ -1,0 +1,62 @@
+{
+  "name": "PPMSchedule",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "name": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "site_id": {
+      "type": "string"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "weekly",
+        "monthly",
+        "quarterly",
+        "biannual",
+        "annual"
+      ],
+      "default": "monthly"
+    },
+    "interval_days": {
+      "type": "number",
+      "description": "Alternative to frequency, custom interval"
+    },
+    "next_due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "assigned_engineer_id": {
+      "type": "string"
+    },
+    "task_description": {
+      "type": "string"
+    },
+    "estimated_duration_minutes": {
+      "type": "number"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_completed_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "org_id",
+    "name",
+    "asset_id",
+    "site_id",
+    "frequency"
+  ]
+}

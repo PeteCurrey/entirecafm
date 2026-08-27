@@ -1,0 +1,58 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User who performed the action"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "CREATE",
+        "UPDATE",
+        "DELETE",
+        "APPROVE",
+        "REJECT",
+        "ASSIGN"
+      ],
+      "description": "Type of action"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "e.g. Job, Quote, Invoice"
+    },
+    "entity_id": {
+      "type": "string"
+    },
+    "old_values": {
+      "type": "object",
+      "description": "Previous state (for updates)"
+    },
+    "new_values": {
+      "type": "object",
+      "description": "New state"
+    },
+    "ip_address": {
+      "type": "string"
+    },
+    "user_agent": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "org_id",
+    "user_id",
+    "action",
+    "entity_type",
+    "entity_id"
+  ]
+}

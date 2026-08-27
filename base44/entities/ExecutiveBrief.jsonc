@@ -1,0 +1,166 @@
+{
+  "name": "ExecutiveBrief",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "week_commencing": {
+      "type": "string",
+      "format": "date",
+      "description": "Monday date for week commencing"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When brief was generated"
+    },
+    "org_health_score": {
+      "type": "number",
+      "description": "Organization health score (0-100)"
+    },
+    "financial_summary_json": {
+      "type": "object",
+      "description": "Financial metrics and deltas",
+      "properties": {
+        "overdue_value": {
+          "type": "number"
+        },
+        "overdue_count": {
+          "type": "number"
+        },
+        "unbilled_value": {
+          "type": "number"
+        },
+        "collections_expected": {
+          "type": "number"
+        },
+        "delta_pct": {
+          "type": "number"
+        }
+      }
+    },
+    "operational_summary_json": {
+      "type": "object",
+      "description": "Operational metrics",
+      "properties": {
+        "sla_breaches": {
+          "type": "number"
+        },
+        "at_risk_jobs": {
+          "type": "number"
+        },
+        "avg_utilisation": {
+          "type": "number"
+        },
+        "completed_jobs": {
+          "type": "number"
+        },
+        "delta_pct": {
+          "type": "number"
+        }
+      }
+    },
+    "marketing_summary_json": {
+      "type": "object",
+      "description": "Marketing performance",
+      "properties": {
+        "leads": {
+          "type": "number"
+        },
+        "conversion_rate": {
+          "type": "number"
+        },
+        "roi": {
+          "type": "number"
+        },
+        "top_source": {
+          "type": "string"
+        },
+        "delta_pct": {
+          "type": "number"
+        }
+      }
+    },
+    "forecast_summary_json": {
+      "type": "object",
+      "description": "Revenue projections",
+      "properties": {
+        "projection_30d": {
+          "type": "number"
+        },
+        "projection_90d": {
+          "type": "number"
+        },
+        "expected_margin": {
+          "type": "number"
+        },
+        "risk_band": {
+          "type": "string"
+        }
+      }
+    },
+    "risk_summary_json": {
+      "type": "object",
+      "description": "Active risks and alerts",
+      "properties": {
+        "total_alerts": {
+          "type": "number"
+        },
+        "critical_issues": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "risk_score": {
+          "type": "number"
+        }
+      }
+    },
+    "recommendations_json": {
+      "type": "array",
+      "description": "AI-generated action items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "priority": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "category": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pdf_url": {
+      "type": "string",
+      "description": "Storage URL for PDF report"
+    },
+    "distributed_to": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of recipient emails"
+    },
+    "created_by_ai": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether brief was AI-generated"
+    }
+  },
+  "required": [
+    "org_id",
+    "week_commencing",
+    "generated_at",
+    "created_by_ai"
+  ]
+}

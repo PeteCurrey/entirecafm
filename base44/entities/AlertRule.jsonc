@@ -1,0 +1,59 @@
+{
+  "name": "AlertRule",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "SLA_BREACHES",
+        "ORG_HEALTH",
+        "UTILISATION",
+        "OVERDUE_INVOICES"
+      ],
+      "description": "Type of alert metric"
+    },
+    "threshold_number": {
+      "type": "number",
+      "description": "Threshold value to trigger alert"
+    },
+    "operator": {
+      "type": "string",
+      "enum": [
+        ">",
+        "<",
+        ">=",
+        "<="
+      ],
+      "description": "Comparison operator"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "email",
+        "slack",
+        "inapp"
+      ],
+      "description": "Alert delivery channel"
+    },
+    "destination": {
+      "type": "string",
+      "description": "Email address or Slack webhook URL"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this rule is currently active"
+    }
+  },
+  "required": [
+    "org_id",
+    "type",
+    "threshold_number",
+    "operator",
+    "channel"
+  ]
+}

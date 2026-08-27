@@ -1,0 +1,70 @@
+{
+  "name": "ClientDocument",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client entity"
+    },
+    "site_id": {
+      "type": "string",
+      "description": "Related site (optional)"
+    },
+    "asset_id": {
+      "type": "string",
+      "description": "Related asset (optional)"
+    },
+    "job_id": {
+      "type": "string",
+      "description": "Related job (optional)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Document name"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "Public URL to document"
+    },
+    "file_type": {
+      "type": "string",
+      "description": "e.g., pdf, jpg, png, docx"
+    },
+    "file_size": {
+      "type": "number",
+      "description": "Size in bytes"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "certificate",
+        "invoice",
+        "report",
+        "photo",
+        "manual",
+        "other"
+      ],
+      "default": "other"
+    },
+    "uploaded_by": {
+      "type": "string",
+      "description": "User ID who uploaded"
+    },
+    "uploaded_by_name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "is_visible_to_client": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "client_id",
+    "name",
+    "file_url",
+    "uploaded_by"
+  ]
+}

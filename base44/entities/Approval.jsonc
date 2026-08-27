@@ -1,0 +1,77 @@
+{
+  "name": "Approval",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "approval_type": {
+      "type": "string",
+      "enum": [
+        "quote",
+        "expense",
+        "job_completion",
+        "purchase_order",
+        "contractor_invoice"
+      ],
+      "description": "Type of approval"
+    },
+    "linked_entity_type": {
+      "type": "string",
+      "description": "e.g. Quote, Job, Expense"
+    },
+    "linked_entity_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "requested_by": {
+      "type": "string",
+      "description": "User ID of requester"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "User ID of approver"
+    },
+    "approved_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejection_reason": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "org_id",
+    "approval_type",
+    "linked_entity_id",
+    "title"
+  ]
+}

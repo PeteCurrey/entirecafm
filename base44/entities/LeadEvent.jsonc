@@ -1,0 +1,64 @@
+{
+  "name": "LeadEvent",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "Foreign key to LeadSource"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Associated client"
+    },
+    "quote_id": {
+      "type": "string",
+      "description": "Associated quote (if applicable)"
+    },
+    "job_id": {
+      "type": "string",
+      "description": "Associated job (if applicable)"
+    },
+    "invoice_id": {
+      "type": "string",
+      "description": "Associated invoice (if applicable)"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "ENQUIRY",
+        "QUOTE_SENT",
+        "QUOTE_APPROVED",
+        "JOB_COMPLETED",
+        "INVOICE_PAID"
+      ],
+      "description": "Type of marketing event"
+    },
+    "event_value": {
+      "type": "number",
+      "description": "Monetary value at this event stage"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the event occurred"
+    },
+    "predicted_win_prob": {
+      "type": "number",
+      "description": "AI-predicted win probability (0-1)"
+    },
+    "response_time_hours": {
+      "type": "number",
+      "description": "Hours between enquiry and quote sent"
+    }
+  },
+  "required": [
+    "org_id",
+    "source_id",
+    "event_type",
+    "event_date"
+  ]
+}

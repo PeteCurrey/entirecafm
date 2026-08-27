@@ -1,0 +1,41 @@
+{
+  "name": "EngineerLocation",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "engineer_id": {
+      "type": "string",
+      "description": "User ID of engineer"
+    },
+    "lat": {
+      "type": "number",
+      "description": "Latitude"
+    },
+    "lng": {
+      "type": "number",
+      "description": "Longitude"
+    },
+    "accuracy": {
+      "type": "number",
+      "description": "GPS accuracy in meters"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When location was captured"
+    },
+    "battery_level": {
+      "type": "number",
+      "description": "Device battery percentage"
+    }
+  },
+  "required": [
+    "org_id",
+    "engineer_id",
+    "lat",
+    "lng"
+  ]
+}

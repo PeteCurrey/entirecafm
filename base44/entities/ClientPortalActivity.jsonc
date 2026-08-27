@@ -1,0 +1,30 @@
+{
+  "name": "ClientPortalActivity",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Reference to ClientUser"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed (e.g., 'viewed_job', 'downloaded_invoice')"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional context data"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "client_id",
+    "action",
+    "timestamp"
+  ]
+}

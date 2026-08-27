@@ -1,0 +1,54 @@
+{
+  "name": "AIConversation",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User who sent the message"
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Conversation session ID"
+    },
+    "message": {
+      "type": "string",
+      "description": "User input message"
+    },
+    "response": {
+      "type": "string",
+      "description": "AI response"
+    },
+    "context_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Context tags (director, accounts, marketing, etc.)"
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Response confidence (0.0-1.0)"
+    },
+    "intent": {
+      "type": "string",
+      "description": "Detected user intent"
+    },
+    "data_sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Data sources used for response"
+    }
+  },
+  "required": [
+    "org_id",
+    "user_id",
+    "message",
+    "response"
+  ]
+}

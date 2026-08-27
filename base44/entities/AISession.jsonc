@@ -1,0 +1,50 @@
+{
+  "name": "AISession",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User who initiated the session"
+    },
+    "session_started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When session started"
+    },
+    "last_activity": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last message timestamp"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether session is still active"
+    },
+    "context_memory": {
+      "type": "object",
+      "description": "Session context for continuity",
+      "properties": {
+        "last_module": {
+          "type": "string"
+        },
+        "last_client_id": {
+          "type": "string"
+        },
+        "last_metric": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "org_id",
+    "user_id",
+    "session_started_at",
+    "active"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "DashboardConfig",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User who owns this configuration"
+    },
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID"
+    },
+    "dashboard_type": {
+      "type": "string",
+      "enum": [
+        "director",
+        "compliance",
+        "marketing",
+        "accounts"
+      ],
+      "description": "Type of dashboard"
+    },
+    "layout_json": {
+      "type": "object",
+      "description": "Widget layout configuration with positions and sizes"
+    },
+    "widgets_enabled": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of enabled widget IDs"
+    }
+  },
+  "required": [
+    "user_id",
+    "org_id",
+    "dashboard_type"
+  ]
+}

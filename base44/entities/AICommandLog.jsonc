@@ -1,0 +1,50 @@
+{
+  "name": "AICommandLog",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User who executed command"
+    },
+    "command_type": {
+      "type": "string",
+      "enum": [
+        "QUERY",
+        "ACTION",
+        "REPORT"
+      ],
+      "description": "Type of command"
+    },
+    "command_text": {
+      "type": "string",
+      "description": "Original command text"
+    },
+    "payload_json": {
+      "type": "object",
+      "description": "Command parameters"
+    },
+    "executed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether command was successfully executed"
+    },
+    "result_summary": {
+      "type": "string",
+      "description": "Brief result description"
+    },
+    "execution_time_ms": {
+      "type": "number",
+      "description": "Time taken to execute (milliseconds)"
+    }
+  },
+  "required": [
+    "org_id",
+    "user_id",
+    "command_type",
+    "command_text"
+  ]
+}

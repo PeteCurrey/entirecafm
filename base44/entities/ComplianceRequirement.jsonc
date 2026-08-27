@@ -1,0 +1,40 @@
+{
+  "name": "ComplianceRequirement",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string"
+    },
+    "asset_type": {
+      "type": "string"
+    },
+    "requirement_name": {
+      "type": "string",
+      "description": "e.g., Gas Safety, PAT, LOLER"
+    },
+    "frequency_days": {
+      "type": "number",
+      "description": "How often test is required"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "statutory",
+        "recommended",
+        "site_specific"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "org_id",
+    "requirement_name",
+    "frequency_days"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "SEOCompetitor",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Competitor domain"
+    },
+    "name": {
+      "type": "string",
+      "description": "Competitor name/label"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to actively track this competitor"
+    }
+  },
+  "required": [
+    "org_id",
+    "domain"
+  ]
+}

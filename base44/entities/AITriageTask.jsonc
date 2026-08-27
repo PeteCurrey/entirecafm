@@ -1,0 +1,93 @@
+{
+  "name": "AITriageTask",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Linked Request ID"
+    },
+    "ai_output": {
+      "type": "object",
+      "description": "Full AI classification result",
+      "properties": {
+        "issue": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number"
+        },
+        "recommended_priority": {
+          "type": "string"
+        },
+        "checklist": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "required_parts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sku": {
+                "type": "string"
+              },
+              "qty": {
+                "type": "number"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "estimated_duration_minutes": {
+          "type": "number"
+        }
+      }
+    },
+    "confidence": {
+      "type": "number",
+      "description": "AI confidence score (0.0 - 1.0)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "AUTO_CREATED",
+        "AWAITING_CONFIRMATION",
+        "REVIEW_REQUIRED",
+        "CONFIRMED",
+        "REJECTED"
+      ],
+      "default": "REVIEW_REQUIRED",
+      "description": "Triage workflow status"
+    },
+    "job_id": {
+      "type": "string",
+      "description": "Created Job ID if converted"
+    },
+    "confirmed_by": {
+      "type": "string",
+      "description": "User ID who confirmed the triage"
+    },
+    "confirmed_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejection_reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "org_id",
+    "request_id",
+    "ai_output",
+    "confidence",
+    "status"
+  ]
+}

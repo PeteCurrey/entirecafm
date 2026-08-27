@@ -1,0 +1,36 @@
+{
+  "name": "CreditPolicy",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "auto_hold_non_critical": {
+      "type": "boolean",
+      "default": false,
+      "description": "Automatically hold non-critical jobs for high-risk clients"
+    },
+    "hold_threshold_value": {
+      "type": "number",
+      "description": "Total overdue value to trigger hold (e.g., \u00a325,000)"
+    },
+    "hold_threshold_days": {
+      "type": "number",
+      "description": "Days overdue to trigger hold (e.g., 30)"
+    },
+    "require_po_for_future": {
+      "type": "boolean",
+      "default": false,
+      "description": "Require PO for all future jobs with this client"
+    },
+    "boe_base_rate": {
+      "type": "number",
+      "default": 5.25,
+      "description": "Bank of England base rate for LPCD calculations"
+    }
+  },
+  "required": [
+    "org_id"
+  ]
+}

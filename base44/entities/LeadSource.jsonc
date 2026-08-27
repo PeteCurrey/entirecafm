@@ -1,0 +1,45 @@
+{
+  "name": "LeadSource",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "name": {
+      "type": "string",
+      "description": "Source name (e.g., 'Google Ads', 'Referral', 'LinkedIn')"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Digital",
+        "Referral",
+        "Tender",
+        "Repeat",
+        "Direct",
+        "Other"
+      ],
+      "description": "Source category"
+    },
+    "cost_per_month": {
+      "type": "number",
+      "default": 0,
+      "description": "Monthly cost for this source"
+    },
+    "quality_score": {
+      "type": "number",
+      "default": 50,
+      "description": "Quality score 0-100 based on conversion history"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "org_id",
+    "name",
+    "category"
+  ]
+}

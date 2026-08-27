@@ -1,0 +1,48 @@
+{
+  "name": "SEOKeywordHistory",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "keyword_id": {
+      "type": "string",
+      "description": "Reference to parent SEOKeyword"
+    },
+    "keyword": {
+      "type": "string",
+      "description": "Keyword phrase"
+    },
+    "url": {
+      "type": "string",
+      "description": "URL being tracked"
+    },
+    "rank": {
+      "type": "number",
+      "description": "SERP position at this check"
+    },
+    "search_volume": {
+      "type": "number",
+      "description": "Search volume at this check"
+    },
+    "checked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this rank was recorded"
+    },
+    "is_competitor": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is a competitor URL"
+    }
+  },
+  "required": [
+    "org_id",
+    "keyword_id",
+    "keyword",
+    "url",
+    "rank",
+    "checked_at"
+  ]
+}

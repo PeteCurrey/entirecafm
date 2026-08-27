@@ -1,0 +1,51 @@
+{
+  "name": "DailyOrgMetrics",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Snapshot date in YYYY-MM-DD format (org timezone)"
+    },
+    "org_health_score": {
+      "type": "number",
+      "description": "Organization health score (0-100)"
+    },
+    "sla_breaches": {
+      "type": "number",
+      "description": "Number of SLA breaches"
+    },
+    "at_risk_jobs": {
+      "type": "number",
+      "description": "Number of jobs at risk"
+    },
+    "avg_utilisation_pct": {
+      "type": "number",
+      "description": "Average engineer utilisation percentage (0-100)"
+    },
+    "overdue_value": {
+      "type": "number",
+      "description": "Total value of overdue invoices"
+    },
+    "unbilled_value": {
+      "type": "number",
+      "description": "Total value of approved unbilled quotes"
+    },
+    "active_jobs": {
+      "type": "number",
+      "description": "Number of active jobs"
+    },
+    "completed_jobs": {
+      "type": "number",
+      "description": "Number of completed jobs"
+    }
+  },
+  "required": [
+    "org_id",
+    "date"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "name": "Asset",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "name": {
+      "type": "string",
+      "description": "Asset name/identifier"
+    },
+    "site_id": {
+      "type": "string"
+    },
+    "building_id": {
+      "type": "string"
+    },
+    "asset_type": {
+      "type": "string",
+      "enum": [
+        "hvac",
+        "electrical",
+        "plumbing",
+        "fire_safety",
+        "security",
+        "lift",
+        "boiler",
+        "lighting",
+        "doors",
+        "other"
+      ]
+    },
+    "manufacturer": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "serial_number": {
+      "type": "string"
+    },
+    "installation_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "warranty_expiry": {
+      "type": "string",
+      "format": "date"
+    },
+    "location_description": {
+      "type": "string",
+      "description": "e.g. 'Basement, Room B12'"
+    },
+    "qr_code": {
+      "type": "string",
+      "description": "QR code for quick lookup"
+    },
+    "photo_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "service_interval_days": {
+      "type": "number",
+      "description": "PPM service interval"
+    },
+    "last_service_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "org_id",
+    "name",
+    "site_id",
+    "asset_type"
+  ]
+}

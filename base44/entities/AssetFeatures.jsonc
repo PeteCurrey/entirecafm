@@ -1,0 +1,68 @@
+{
+  "name": "AssetFeatures",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "site_id": {
+      "type": "string"
+    },
+    "asset_type": {
+      "type": "string"
+    },
+    "manufacturer": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "install_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "age_days": {
+      "type": "number"
+    },
+    "last_ppm_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "ppm_interval_days": {
+      "type": "number"
+    },
+    "jobs_last_90d": {
+      "type": "number"
+    },
+    "failures_last_12m": {
+      "type": "number"
+    },
+    "mean_time_between_failures_days": {
+      "type": "number"
+    },
+    "avg_job_duration_mins": {
+      "type": "number"
+    },
+    "avg_job_cost": {
+      "type": "number"
+    },
+    "downtime_hours_12m": {
+      "type": "number"
+    },
+    "sensor_health_score": {
+      "type": "number",
+      "description": "0-1, optional sensor health"
+    },
+    "computed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "org_id",
+    "asset_id"
+  ]
+}

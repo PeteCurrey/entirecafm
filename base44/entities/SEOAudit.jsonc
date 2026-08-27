@@ -1,0 +1,72 @@
+{
+  "name": "SEOAudit",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID"
+    },
+    "url": {
+      "type": "string",
+      "description": "URL audited"
+    },
+    "audit_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When audit was performed"
+    },
+    "title": {
+      "type": "string",
+      "description": "Page title"
+    },
+    "title_length": {
+      "type": "number"
+    },
+    "meta_description": {
+      "type": "string"
+    },
+    "meta_description_length": {
+      "type": "number"
+    },
+    "h1_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "H1 headings found"
+    },
+    "h2_count": {
+      "type": "number"
+    },
+    "keyword_density": {
+      "type": "object",
+      "description": "Top keywords and their frequency"
+    },
+    "word_count": {
+      "type": "number"
+    },
+    "score": {
+      "type": "number",
+      "description": "Overall SEO score 0-100"
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "SEO issues found"
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Improvement recommendations"
+    }
+  },
+  "required": [
+    "org_id",
+    "url",
+    "audit_date"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "name": "Organisation",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Organisation/Company name"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "service_provider",
+        "client"
+      ],
+      "description": "Type of organisation"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "Organisation logo"
+    },
+    "address": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "settings": {
+      "type": "object",
+      "description": "Organisation-specific settings",
+      "properties": {
+        "require_po_number": {
+          "type": "boolean",
+          "default": false
+        },
+        "default_sla_hours": {
+          "type": "number",
+          "default": 24
+        },
+        "auto_assign_jobs": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ]
+}

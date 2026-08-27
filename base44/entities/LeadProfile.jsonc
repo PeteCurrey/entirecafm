@@ -1,0 +1,62 @@
+{
+  "name": "LeadProfile",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client entity"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "Reference to LeadSource"
+    },
+    "first_contact_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_activity_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "lead_score": {
+      "type": "number",
+      "default": 50,
+      "description": "Score 0-100"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "NEW",
+        "ACTIVE",
+        "DORMANT",
+        "CLOSED_WON",
+        "CLOSED_LOST"
+      ],
+      "default": "NEW"
+    },
+    "next_action": {
+      "type": "string"
+    },
+    "follow_up_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "org_id",
+    "client_id"
+  ]
+}

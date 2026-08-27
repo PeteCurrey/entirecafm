@@ -1,0 +1,47 @@
+{
+  "name": "ESGMetric",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string"
+    },
+    "site_id": {
+      "type": "string"
+    },
+    "metric_type": {
+      "type": "string",
+      "enum": [
+        "energy_kwh",
+        "gas_m3",
+        "water_m3",
+        "waste_kg",
+        "co2_tonnes"
+      ]
+    },
+    "value": {
+      "type": "number"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "sensor",
+        "import"
+      ],
+      "default": "manual"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "org_id",
+    "metric_type",
+    "value",
+    "recorded_at"
+  ]
+}

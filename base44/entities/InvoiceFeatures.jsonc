@@ -1,0 +1,71 @@
+{
+  "name": "InvoiceFeatures",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "invoice_id": {
+      "type": "string",
+      "description": "Foreign key to Invoice entity"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Client ID for this invoice"
+    },
+    "amount_dec": {
+      "type": "number",
+      "description": "Invoice amount"
+    },
+    "days_outstanding": {
+      "type": "number",
+      "description": "Days since due date (today - due_at)"
+    },
+    "has_po": {
+      "type": "boolean",
+      "description": "Whether PO number is present"
+    },
+    "disputed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether invoice is disputed"
+    },
+    "prior_overdues": {
+      "type": "number",
+      "description": "Count of overdue invoices in last 180 days for this client"
+    },
+    "avg_days_to_pay": {
+      "type": "number",
+      "description": "Client's average payment time (rolling 6 months)"
+    },
+    "contact_quality": {
+      "type": "number",
+      "description": "Contact quality score 0-100 (email deliverability, reply history)"
+    },
+    "communication_events": {
+      "type": "number",
+      "description": "Number of communications in last 14 days"
+    },
+    "value_segment": {
+      "type": "string",
+      "enum": [
+        "LOW",
+        "MID",
+        "HIGH"
+      ],
+      "description": "Value segment: LOW <\u00a31k, MID \u00a31k-\u00a310k, HIGH >\u00a310k"
+    },
+    "last_reminder_days": {
+      "type": "number",
+      "description": "Days since last reminder sent"
+    }
+  },
+  "required": [
+    "org_id",
+    "invoice_id",
+    "client_id",
+    "amount_dec",
+    "days_outstanding"
+  ]
+}

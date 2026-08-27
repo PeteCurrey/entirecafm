@@ -1,0 +1,86 @@
+{
+  "name": "Request",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "request_number": {
+      "type": "string",
+      "description": "Auto-generated request reference"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "site_id": {
+      "type": "string"
+    },
+    "building_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "triaged",
+        "converted",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "requested_by": {
+      "type": "string",
+      "description": "User ID of requester"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "preferred_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "converted_job_id": {
+      "type": "string",
+      "description": "Job ID after conversion"
+    },
+    "converted_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejection_reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "org_id",
+    "title",
+    "client_id",
+    "site_id"
+  ]
+}

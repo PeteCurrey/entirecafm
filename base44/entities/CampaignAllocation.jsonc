@@ -1,0 +1,68 @@
+{
+  "name": "CampaignAllocation",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "Foreign key to LeadSource"
+    },
+    "current_budget": {
+      "type": "number",
+      "description": "Current monthly budget (\u00a3)"
+    },
+    "recommended_budget": {
+      "type": "number",
+      "description": "AI-recommended monthly budget (\u00a3)"
+    },
+    "roi": {
+      "type": "number",
+      "description": "Return on investment ratio"
+    },
+    "conversion_rate": {
+      "type": "number",
+      "description": "Conversion rate (0-1)"
+    },
+    "avg_lead_value": {
+      "type": "number",
+      "description": "Average value per lead (\u00a3)"
+    },
+    "change_pct": {
+      "type": "number",
+      "description": "Percentage change in budget"
+    },
+    "effective_from": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when allocation should take effect"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "APPLIED",
+        "REJECTED"
+      ],
+      "default": "PENDING",
+      "description": "Allocation status"
+    },
+    "applied_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When allocation was applied"
+    },
+    "applied_by": {
+      "type": "string",
+      "description": "User who applied the allocation"
+    }
+  },
+  "required": [
+    "org_id",
+    "source_id",
+    "current_budget",
+    "recommended_budget"
+  ]
+}

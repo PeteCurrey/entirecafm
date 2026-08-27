@@ -1,0 +1,73 @@
+{
+  "name": "CommunicationEvent",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Client this communication is with"
+    },
+    "invoice_id": {
+      "type": "string",
+      "description": "Related invoice (if applicable)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "email",
+        "phone",
+        "letter",
+        "meeting",
+        "inapp"
+      ],
+      "description": "Communication type"
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "outbound",
+        "inbound"
+      ],
+      "description": "Communication direction"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Email subject or call summary"
+    },
+    "content": {
+      "type": "string",
+      "description": "Email body, call notes, or message content"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "sent",
+        "delivered",
+        "bounced",
+        "replied",
+        "promise_to_pay",
+        "disputed",
+        "no_answer"
+      ],
+      "description": "Communication outcome"
+    },
+    "promise_to_pay_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date client promised to pay"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User who initiated communication"
+    }
+  },
+  "required": [
+    "org_id",
+    "client_id",
+    "type",
+    "direction"
+  ]
+}

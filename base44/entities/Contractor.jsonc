@@ -1,0 +1,56 @@
+{
+  "name": "Contractor",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "name": {
+      "type": "string",
+      "description": "Contractor company name"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "specialties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Skills/trades (e.g. HVAC, Electrical, Plumbing)"
+    },
+    "insurance_expiry": {
+      "type": "string",
+      "format": "date"
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "suspended"
+      ],
+      "default": "active"
+    },
+    "hourly_rate": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "org_id",
+    "name"
+  ]
+}

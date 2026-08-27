@@ -1,0 +1,50 @@
+{
+  "name": "ExecutiveRecipient",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "name": {
+      "type": "string",
+      "description": "Recipient name"
+    },
+    "email": {
+      "type": "string",
+      "description": "Recipient email address"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "CEO",
+        "Director",
+        "Ops",
+        "Finance",
+        "Marketing"
+      ],
+      "description": "Executive role"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether recipient is active"
+    },
+    "preferred_channel": {
+      "type": "string",
+      "enum": [
+        "email",
+        "slack",
+        "pdf"
+      ],
+      "default": "email",
+      "description": "Preferred distribution channel"
+    }
+  },
+  "required": [
+    "org_id",
+    "name",
+    "email",
+    "role"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "name": "AlertEvent",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "rule_id": {
+      "type": "string",
+      "description": "Alert rule that triggered this event"
+    },
+    "metric_value": {
+      "type": "number",
+      "description": "The actual metric value when alert triggered"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "TRIGGERED",
+        "DELIVERED",
+        "FAILED"
+      ],
+      "default": "TRIGGERED",
+      "description": "Alert delivery status"
+    },
+    "payload_json": {
+      "type": "object",
+      "description": "Full alert payload sent via channel"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Error details if delivery failed"
+    }
+  },
+  "required": [
+    "org_id",
+    "rule_id",
+    "metric_value",
+    "status"
+  ]
+}

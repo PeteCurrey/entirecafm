@@ -1,0 +1,73 @@
+{
+  "name": "RevenueProjection",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "date_generated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When projection was generated"
+    },
+    "projection_30d": {
+      "type": "number",
+      "description": "30-day revenue projection (\u00a3)"
+    },
+    "projection_90d": {
+      "type": "number",
+      "description": "90-day revenue projection (\u00a3)"
+    },
+    "confirmed_pipeline_value": {
+      "type": "number",
+      "description": "Value of approved quotes (\u00a3)"
+    },
+    "predicted_pipeline_value": {
+      "type": "number",
+      "description": "Expected value from pending quotes (\u00a3)"
+    },
+    "expected_margin": {
+      "type": "number",
+      "description": "Expected profit margin (\u00a3)"
+    },
+    "expected_collections": {
+      "type": "number",
+      "description": "Expected invoice collections (\u00a3)"
+    },
+    "risk_band": {
+      "type": "string",
+      "enum": [
+        "LOW",
+        "MED",
+        "HIGH"
+      ],
+      "description": "Forecast risk classification"
+    },
+    "assumptions_json": {
+      "type": "object",
+      "description": "Assumptions and top contributors",
+      "properties": {
+        "top_clients": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "quote_count": {
+          "type": "number"
+        },
+        "invoice_count": {
+          "type": "number"
+        },
+        "avg_accept_prob": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "org_id",
+    "date_generated"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "name": "ClientMessage",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client entity"
+    },
+    "job_id": {
+      "type": "string",
+      "description": "Related job (optional)"
+    },
+    "sender_type": {
+      "type": "string",
+      "enum": [
+        "client",
+        "engineer",
+        "support"
+      ],
+      "description": "Who sent the message"
+    },
+    "sender_name": {
+      "type": "string"
+    },
+    "sender_id": {
+      "type": "string",
+      "description": "User ID of sender"
+    },
+    "message": {
+      "type": "string"
+    },
+    "attachment_url": {
+      "type": "string"
+    },
+    "read_by_client": {
+      "type": "boolean",
+      "default": false
+    },
+    "read_by_engineer": {
+      "type": "boolean",
+      "default": false
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "client_id",
+    "sender_type",
+    "sender_name",
+    "sender_id",
+    "message",
+    "sent_at"
+  ]
+}

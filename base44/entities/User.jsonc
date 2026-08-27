@@ -1,0 +1,46 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "onboarded": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user has completed onboarding walkthrough"
+    },
+    "onboarded_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When user completed onboarding"
+    },
+    "preferences": {
+      "type": "object",
+      "description": "User preferences and settings",
+      "properties": {
+        "theme": {
+          "type": "string",
+          "enum": [
+            "dark",
+            "light"
+          ],
+          "default": "dark"
+        },
+        "ai_voice_enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "dashboard_layout": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "org_id",
+    "onboarded_date",
+    "preferences"
+  ]
+}

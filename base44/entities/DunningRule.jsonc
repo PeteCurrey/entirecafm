@@ -1,0 +1,70 @@
+{
+  "name": "DunningRule",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "step": {
+      "type": "number",
+      "description": "Dunning sequence step (1, 2, 3, 4)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Rule name (e.g., 'Gentle reminder', 'Firm reminder')"
+    },
+    "trigger_days": {
+      "type": "number",
+      "description": "Days overdue to trigger this step"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "email",
+        "letter",
+        "phone",
+        "inapp"
+      ],
+      "description": "Communication channel"
+    },
+    "template_json": {
+      "type": "object",
+      "description": "Email/letter template with subject and body",
+      "properties": {
+        "subject": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        }
+      }
+    },
+    "add_lpcd_compensation": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to add LPCD compensation details"
+    },
+    "tone": {
+      "type": "string",
+      "enum": [
+        "polite",
+        "direct",
+        "legal"
+      ],
+      "default": "polite",
+      "description": "Communication tone"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "org_id",
+    "step",
+    "name",
+    "trigger_days",
+    "channel"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "name": "Part",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID"
+    },
+    "name": {
+      "type": "string",
+      "description": "Part name"
+    },
+    "part_number": {
+      "type": "string",
+      "description": "Part number or SKU"
+    },
+    "supplier": {
+      "type": "string",
+      "description": "Supplier name"
+    },
+    "unit_cost": {
+      "type": "number",
+      "description": "Unit cost"
+    },
+    "stock_quantity": {
+      "type": "number",
+      "default": 0,
+      "description": "Current stock quantity"
+    },
+    "category": {
+      "type": "string",
+      "description": "Part category"
+    },
+    "reorder_level": {
+      "type": "number",
+      "description": "Reorder threshold"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "org_id",
+    "name"
+  ]
+}

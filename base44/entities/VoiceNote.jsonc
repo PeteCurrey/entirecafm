@@ -1,0 +1,82 @@
+{
+  "name": "VoiceNote",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "job_id": {
+      "type": "string",
+      "description": "Linked Job ID"
+    },
+    "audio_url": {
+      "type": "string",
+      "description": "Storage URL for audio file"
+    },
+    "transcript": {
+      "type": "string",
+      "description": "Transcribed text from audio"
+    },
+    "duration_seconds": {
+      "type": "number",
+      "description": "Length of audio recording"
+    },
+    "ai_parsed_data": {
+      "type": "object",
+      "description": "Extracted data from transcript",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "item_name": {
+                "type": "string"
+              },
+              "quantity": {
+                "type": "number"
+              },
+              "matched_pricebook_id": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "labour_minutes": {
+          "type": "number"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number"
+        }
+      }
+    },
+    "quote_id": {
+      "type": "string",
+      "description": "Generated Quote ID if created"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PROCESSING",
+        "QUOTE_CREATED",
+        "AWAITING_CONFIRMATION",
+        "REVIEW_REQUIRED",
+        "FAILED"
+      ],
+      "default": "PROCESSING"
+    },
+    "recorded_by": {
+      "type": "string",
+      "description": "User ID who recorded the note"
+    }
+  },
+  "required": [
+    "org_id",
+    "job_id",
+    "audio_url"
+  ]
+}

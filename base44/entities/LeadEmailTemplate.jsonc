@@ -1,0 +1,47 @@
+{
+  "name": "LeadEmailTemplate",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "trigger_condition": {
+      "type": "string",
+      "enum": [
+        "QUOTE_NOT_APPROVED_30D",
+        "DORMANT_60D",
+        "DORMANT_90D",
+        "FOLLOWUP_CUSTOM"
+      ]
+    },
+    "subject": {
+      "type": "string"
+    },
+    "body_html": {
+      "type": "string"
+    },
+    "tone": {
+      "type": "string",
+      "enum": [
+        "polite",
+        "firm",
+        "direct"
+      ],
+      "default": "polite"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "org_id",
+    "name",
+    "trigger_condition",
+    "subject",
+    "body_html"
+  ]
+}

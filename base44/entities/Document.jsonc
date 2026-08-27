@@ -1,0 +1,64 @@
+{
+  "name": "Document",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "file_name": {
+      "type": "string"
+    },
+    "file_size": {
+      "type": "number",
+      "description": "Size in bytes"
+    },
+    "file_type": {
+      "type": "string",
+      "description": "MIME type"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "Storage URL (private)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "job_photo",
+        "completion_photo",
+        "quote",
+        "invoice",
+        "certificate",
+        "manual",
+        "other"
+      ],
+      "default": "other"
+    },
+    "linked_entity_type": {
+      "type": "string",
+      "description": "e.g. Job, Asset, Site"
+    },
+    "linked_entity_id": {
+      "type": "string"
+    },
+    "uploaded_by": {
+      "type": "string",
+      "description": "User ID"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": false
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "org_id",
+    "file_name",
+    "file_url"
+  ]
+}

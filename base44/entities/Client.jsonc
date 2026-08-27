@@ -1,0 +1,52 @@
+{
+  "name": "Client",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "name": {
+      "type": "string",
+      "description": "Client company name"
+    },
+    "primary_contact_name": {
+      "type": "string"
+    },
+    "primary_contact_email": {
+      "type": "string"
+    },
+    "primary_contact_phone": {
+      "type": "string"
+    },
+    "billing_address": {
+      "type": "string"
+    },
+    "payment_terms_days": {
+      "type": "number",
+      "default": 30
+    },
+    "requires_po": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether PO is required before job start"
+    },
+    "terms_json": {
+      "type": "object",
+      "description": "Custom terms and conditions"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "suspended"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "org_id",
+    "name"
+  ]
+}

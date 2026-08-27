@@ -1,0 +1,108 @@
+{
+  "name": "Quote",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "quote_number": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "site_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "client_approved",
+        "ready_to_schedule",
+        "rejected",
+        "expired"
+      ],
+      "default": "draft"
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "vat_rate": {
+      "type": "number",
+      "default": 20
+    },
+    "vat_amount": {
+      "type": "number"
+    },
+    "total": {
+      "type": "number"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date"
+    },
+    "sent_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "client_approved_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "client_approved_by": {
+      "type": "string"
+    },
+    "po_number_provided": {
+      "type": "string",
+      "description": "PO from client (required if client.requires_po)"
+    },
+    "internal_approval_required": {
+      "type": "boolean",
+      "default": false
+    },
+    "internal_approved_by": {
+      "type": "string"
+    },
+    "internal_approved_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "org_id",
+    "title",
+    "client_id"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "name": "PaymentScore",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "invoice_id": {
+      "type": "string",
+      "description": "Foreign key to Invoice entity"
+    },
+    "score": {
+      "type": "number",
+      "description": "Payment probability score (0-1)"
+    },
+    "risk_band": {
+      "type": "string",
+      "enum": [
+        "LOW",
+        "MED",
+        "HIGH"
+      ],
+      "description": "Risk classification"
+    },
+    "top_drivers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Key factors affecting payment probability"
+    },
+    "next_action": {
+      "type": "string",
+      "description": "Recommended next action"
+    },
+    "computed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When score was calculated"
+    }
+  },
+  "required": [
+    "org_id",
+    "invoice_id",
+    "score",
+    "risk_band"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "name": "ComplianceRecord",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "site_id": {
+      "type": "string"
+    },
+    "requirement_id": {
+      "type": "string"
+    },
+    "last_test_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "next_due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "certificate_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "PENDING"
+      ]
+    },
+    "responsible_contractor": {
+      "type": "string"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": [
+        "LOW",
+        "MED",
+        "HIGH"
+      ],
+      "default": "MED"
+    },
+    "uploaded_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "org_id",
+    "requirement_id",
+    "next_due_date"
+  ]
+}

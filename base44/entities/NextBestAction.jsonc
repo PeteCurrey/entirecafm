@@ -1,0 +1,57 @@
+{
+  "name": "NextBestAction",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Target client (if applicable)"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "Target source (if applicable)"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "REACTIVATE_CLIENT",
+        "INCREASE_SPEND",
+        "REVIEW_PRICING",
+        "DUPLICATE_CAMPAIGN",
+        "FOLLOW_UP"
+      ],
+      "description": "Type of recommended action"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable action description"
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Confidence score 0-1"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Recommended completion date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "dismissed"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "org_id",
+    "action_type",
+    "description",
+    "confidence"
+  ]
+}

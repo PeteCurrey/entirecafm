@@ -1,0 +1,60 @@
+{
+  "name": "SEOKeyword",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "keyword": {
+      "type": "string",
+      "description": "Target keyword phrase"
+    },
+    "rank": {
+      "type": "number",
+      "description": "Current SERP position (1-100)"
+    },
+    "previous_rank": {
+      "type": "number",
+      "description": "Previous rank for comparison"
+    },
+    "change_7d": {
+      "type": "number",
+      "description": "Rank change over last 7 days (negative = improvement)"
+    },
+    "search_volume": {
+      "type": "number",
+      "description": "Monthly search volume"
+    },
+    "last_checked": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last tracking timestamp"
+    },
+    "url": {
+      "type": "string",
+      "description": "Target URL for this keyword"
+    },
+    "competition": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "description": "Keyword competition level"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "org_id",
+    "keyword"
+  ]
+}

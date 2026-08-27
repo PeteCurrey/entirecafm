@@ -1,0 +1,55 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "engineer_id": {
+      "type": "string"
+    },
+    "job_id": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "travel",
+        "materials",
+        "tools",
+        "accommodation",
+        "food",
+        "parking",
+        "other"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "receipt_url": {
+      "type": "string"
+    },
+    "expense_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "approved_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "engineer_id",
+    "category",
+    "amount",
+    "expense_date"
+  ]
+}

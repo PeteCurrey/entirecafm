@@ -1,0 +1,54 @@
+{
+  "name": "QuoteOptimisation",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "quote_id": {
+      "type": "string",
+      "description": "Foreign key to Quote entity"
+    },
+    "base_markup_pct": {
+      "type": "number",
+      "description": "Original markup percentage"
+    },
+    "recommended_markup_pct": {
+      "type": "number",
+      "description": "AI-recommended optimal markup"
+    },
+    "predicted_accept_prob": {
+      "type": "number",
+      "description": "Predicted acceptance probability (0-1)"
+    },
+    "projected_margin": {
+      "type": "number",
+      "description": "Expected profit at recommended markup (\u00a3)"
+    },
+    "delta_margin": {
+      "type": "number",
+      "description": "Margin gain vs current markup (\u00a3)"
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Model confidence (0-1)"
+    },
+    "applied": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether recommendation was applied"
+    },
+    "applied_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When recommendation was applied"
+    }
+  },
+  "required": [
+    "org_id",
+    "quote_id",
+    "recommended_markup_pct",
+    "predicted_accept_prob"
+  ]
+}

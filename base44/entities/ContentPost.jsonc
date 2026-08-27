@@ -1,0 +1,79 @@
+{
+  "name": "ContentPost",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "title": {
+      "type": "string",
+      "description": "Post title"
+    },
+    "topic": {
+      "type": "string",
+      "description": "Original topic input"
+    },
+    "meta_description": {
+      "type": "string",
+      "description": "SEO meta description (160 chars)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Content tags"
+    },
+    "draft_html": {
+      "type": "string",
+      "description": "HTML content body"
+    },
+    "word_count": {
+      "type": "number",
+      "description": "Total word count"
+    },
+    "target_keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "SEO target keywords"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "published_url": {
+      "type": "string",
+      "description": "URL if published to CMS"
+    },
+    "published_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "webflow",
+        "wordpress",
+        "manual"
+      ],
+      "description": "Publishing platform"
+    },
+    "ai_score": {
+      "type": "number",
+      "description": "AI quality score (0-100)"
+    }
+  },
+  "required": [
+    "org_id",
+    "title",
+    "topic"
+  ]
+}

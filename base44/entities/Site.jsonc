@@ -1,0 +1,66 @@
+{
+  "name": "Site",
+  "type": "object",
+  "properties": {
+    "org_id": {
+      "type": "string",
+      "description": "Organization ID for multi-tenant isolation"
+    },
+    "name": {
+      "type": "string",
+      "description": "Site name"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Client organisation ID"
+    },
+    "address": {
+      "type": "string"
+    },
+    "address_line_2": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "postcode": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string",
+      "default": "UK"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "access_notes": {
+      "type": "string",
+      "description": "Site access instructions"
+    },
+    "site_photo_url": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lng": {
+      "type": "number"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "org_id",
+    "name",
+    "client_id",
+    "address"
+  ]
+}
